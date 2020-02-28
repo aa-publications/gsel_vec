@@ -35,26 +35,33 @@ DATE = datetime.now().strftime('%Y-%m-%d')
 # -----------
 def pooled_overlap(long_df):
     # annotation overlap: pool all snps across control sets and summarize by lead snp
-    anno_overlap_df  = long_df.groupby(['lead_snp'])['anno','is_na'].count().reset_index()
-    anno_overlap_df['prop_coverage']= ((anno_overlap_df['anno']/anno_overlap_df['is_na'])*100).round(2)
-    anno_overlap_df.sort_values('prop_coverage', inplace=True)
+    count_df  = long_df.groupby(['lead_snp']).size().reset_index().rename(columns={0:'num_snps'})
+    missing_df = long_df.groupby(['lead_snp'])['is_na'].sum().reset_index().rename(columns={'is_na':'num_missing_anno'})
 
-    return anno_overlap_df
+    anno_coverage_df = pd.merge(count_df, missing_df, on='lead_snp', how='outer')
+    anno_coverage_df['prop_coverage']= 100-((anno_coverage_df['num_missing_anno']/anno_coverage_df['num_snps'])*100).round(1)
+
+    anno_coverage_df.sort_values('prop_coverage', inplace=True)
+
+    return anno_coverage_df
 
 def per_set_overlap(long_df):
 
     # annotation overlap: summarize by lead snp per control set then take mean
-    by_control_set_overlap_df = long_df.groupby(['lead_snp','set'])['anno', 'is_na'].count().reset_index() # is_na should just be a total count
-    by_control_set_overlap_df['prop_coverage'] = ((by_control_set_overlap_df['anno']/by_control_set_overlap_df['is_na'])*100).round(2)
+    count_df  = long_df.loc[long_df['set']!='ld_snp'].groupby(['lead_snp', 'set']).size().reset_index().rename(columns={0:'num_snps'})
+    missing_df = long_df.loc[long_df['set']!='ld_snp'].groupby(['lead_snp', 'set'])['is_na'].sum().reset_index().rename(columns={'is_na':'num_missing_anno'})
+
+    anno_coverage_df = pd.merge(count_df, missing_df, on=['lead_snp', 'set'], how='outer')
+    anno_coverage_df['prop_coverage']= 100-((anno_coverage_df['num_missing_anno']/anno_coverage_df['num_snps'])*100).round(1)
 
 
     # exclude gwas snps
-    by_control_summary_df = by_control_set_overlap_df.loc[by_control_set_overlap_df['set']!='ld_snp'].groupby(['lead_snp']).agg({'prop_coverage':['mean','std','size']}).reset_index()
+    by_control_summary_df = anno_coverage_df.groupby(['lead_snp']).agg({'prop_coverage':['mean','std','count']}).reset_index()
     by_control_summary_df.columns = by_control_summary_df.columns.droplevel()
-    by_control_summary_df.columns = ['lead_snp','mean_prop','std_prop','n_sets']
+    by_control_summary_df.columns = ['lead_snp','mean_prop','std_prop','non_na_sets']
     by_control_summary_df.sort_values('mean_prop', inplace=True)
 
-    return by_control_set_overlap_df
+    return by_control_summary_df
 
 def groupby_mean(control_long_df, gwas_long_df, by):
 
@@ -149,6 +156,9 @@ def set_up_outputs(OutputObj, anno_label_list):
                                 'pvalue_{}_per_lead_snp.tsv'.format(anno_label), custom_root=anno_root)
         OutputObj.add_output('{}_zscore'.format(anno_label),
                                 'zscore_{}_per_lead_snp.tsv'.format(anno_label), custom_root=anno_root)
+
+        OutputObj.add_output('{}_enrichment_summary'.format(anno_label),
+                                '{}_enrichment_summary.tsv'.format(anno_label), custom_root=anno_root)
 
 
     return OutputObj
@@ -267,7 +277,6 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
     OutObj = set_up_outputs(OutObj, anno_label_list)
 
 
-
     ###
     ### one thread per annotation intersectiong
     ###
@@ -289,7 +298,7 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
 
 
 
-    # write
+    # unpack and write
     for anno_result in  intersect_ouputs:
 
         anno_label = anno_result['anno_label']
@@ -300,7 +309,12 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
         zscore_df = anno_result['zscore_df']
 
 
+        combined_df = pd.merge( pd.merge(by_control_set_overlap.loc[:, ['lead_snp','mean_prop','std_prop']],
+                    median_df.loc[:, ['lead_snp','lead_snp_anno']], on='lead_snp', how='outer'),
+                    pvalue_df.loc[:, ['lead_snp','pvalue','reject_h0_benj_hoch','corrected_pval_benj_hoch']], on='lead_snp', how='outer')
 
+
+        combined_df.to_csv(OutObj.get('{}_enrichment_summary'.format(anno_label)), sep="\t", index=False)
         median_df.to_csv(OutObj.get('{}_median_output'.format(anno_label)), sep="\t", index=False)
         pooled_overlap_df.to_csv(OutObj.get('{}_pooled_overlap_output'.format(anno_label)) , sep="\t", index=False)
         by_control_set_overlap.to_csv(OutObj.get('{}_by_control_set_overlap_output'.format(anno_label)) , sep="\t", index=False)

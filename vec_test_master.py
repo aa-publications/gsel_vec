@@ -108,6 +108,7 @@ ld_expanded_control_sets_file= ldexp_match_OutObj.get('ld_expanded_output')
 ld_expanded_control_sets_r2_file= ldexp_match_OutObj.get('ld_r2_expanded_output')
 combined_summary_df, mean_sd_ldscore_df = check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead_snps_ld_counts_file, ld_expanded_control_sets_r2_file, ldbuds_r2_threshold, outputdir)
 
+# output_root=outputdir
 
 
 
@@ -115,6 +116,9 @@ combined_summary_df, mean_sd_ldscore_df = check_ld_expanded_sets(snpsnap_db_file
 anno_dir="/scratch/abraha1/gsel_/gsel_vec/create_annotations/anno_dicts"
 anno_path_dict = {'fst': os.path.join(anno_dir,'fst_eas_afr_snpsnap_eur_ld0.1_collection.pickle'), 'fst2': os.path.join(anno_dir,'fst_eas_afr_snpsnap_eur_ld0.1_collection.pickle')}
 intersect_ouputs = intersect_all_annotations(anno_path_dict, ld_expanded_control_sets_file, outputdir)
+
+# output_root = outputdir
+# matched_file=ld_expanded_control_sets_file
 
 
 logger.info("Done with master.py. Took {:.2f} minutes.".format( (time.time()-master_start)/60))

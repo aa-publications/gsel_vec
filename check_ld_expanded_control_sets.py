@@ -215,6 +215,7 @@ def set_up_outputs(OutputObj):
     # set up ouput files
     OutputObj.add_output('lead_snps_matching_quality_file', 'lead_snps_matching_quality.tsv', add_root=True)
     OutputObj.add_output('ldscore_for_expanded_control_sets_quality_file', 'ldscore_matching_quality_for_ldexpanded_sets.tsv', add_root=True)
+    OutputObj.add_output('ldsnp_coverage_by_input_snp', 'ldsnp_coverage_by_input_snp.tsv', add_root=True)
 
     return OutputObj
 
@@ -278,7 +279,7 @@ def check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead
 
 
     ###
-    ###   summarize for lead snps only and their matched control snps
+    ###   summarize for lead snps only and their matched control snps only (exclude ld control snps)
     ###
 
     summary_maf_df, maf_mean_std_df = summarize_across_sets('snp_maf',lead_snps_only_df,control_sets_of_lead_snps_only_df, db, control_cols)
@@ -305,6 +306,30 @@ def check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead
     ### summarize across ld expanded sets
     ###
 
+    for_summarize_sets_df = lead_and_control_sets_df.copy()
+    for_summarize_sets_df.replace('None', np.nan, inplace=True)
+
+    # create df with one row per lead snp and one column per control snp with proportion of LD snps present out of # required.
+    num_ldsnps_lead_df = for_summarize_sets_df.loc[:, ['lead_snp']+control_cols].groupby('lead_snp').size().reset_index().rename(columns={0:'num_ld_snps_required'})
+    num_ldsnps_control_df = for_summarize_sets_df.loc[:, ['lead_snp']+control_cols].groupby('lead_snp').count().reset_index()
+    num_ldsnps_df = pd.merge(num_ldsnps_lead_df, num_ldsnps_control_df, on='lead_snp', how='outer')
+    num_ldsnps_df[control_cols] = (num_ldsnps_df[control_cols].div(num_ldsnps_df['num_ld_snps_required'], axis=0)*100).round(1)
+
+    num_ldsnps_df['min_prop']  =num_ldsnps_df[control_cols].min(1)
+    num_ldsnps_df['max_prop']  =num_ldsnps_df[control_cols].max(1)
+    num_ldsnps_df['mean_prop']  =num_ldsnps_df[control_cols].mean(1)
+    num_ldsnps_df['median_prop']  =num_ldsnps_df[control_cols].median(1)
+    num_ldsnps_df['n_Sets']  = len(control_cols)
+
+    summary_coverage_df = num_ldsnps_df.loc[:, ['lead_snp','num_ld_snps_required', 'min_prop', 'max_prop', 'mean_prop','median_prop', 'n_Sets']].copy()
+    summary_coverage_df.sort_values('mean_prop', ascending=True, inplace=True)
+
+    summary_coverage_df.to_csv(OutObj.get('ldsnp_coverage_by_input_snp'), sep="\t", index=False)
+    logger.info("Wrote summary of ld SNP coverage to: {}".format(OutObj.get('ldsnp_coverage_by_input_snp')))
+
+
+    mean_prop_dict = dict(zip(summary_coverage_df.lead_snp, summary_coverage_df.mean_prop))
+
     # -----------
     # check that chromosomes are the same in each control set for a given lead snp
     # -----------
@@ -325,7 +350,7 @@ def check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead
     r2_df.loc[:,control_cols] = r2_df.loc[:,control_cols].apply(pd.to_numeric)
 
     lead_control_ldscore_df = summarize_ldscore(r2_df, control_cols)
-
+    lead_control_ldscore_df['mean_ldsnps_coverage'] = lead_control_ldscore_df.lead_snp.map(mean_prop_dict)
 
     if lead_control_ldscore_df.ldscore_outside_sd.any():
         logger.info("* Warning: ldscore range for ld expanded control sets are not within 1 SD of the input/lead locus")

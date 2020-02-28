@@ -106,7 +106,7 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
     snps_df = pd.read_csv(control_snps_file, sep="\t")
 
     # convert wide to long format
-    wide_snp_df = pd.wide_to_long(snps_df, stubnames='Set_', i="snps_to_match", j="Set")
+    wide_snp_df = pd.wide_to_long(snps_df, stubnames='Set_', i="lead_snp", j="Set")
     wide_snp_df.reset_index(inplace=True)
     wide_snp_df['chromosome']  = wide_snp_df.Set_.apply(lambda x: int(x.split(":")[0]))
     wide_snp_df.sort_values('Set_', inplace=True)
