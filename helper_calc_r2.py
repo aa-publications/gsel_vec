@@ -39,8 +39,8 @@ logger = logging.getLogger('main.{}'.format(__name__))
 # -----------
 
 
-# def calc_r2_for_input_snps(snps_dir, output_dir, thous_gen_file, logger ):
-def calc_r2_for_input_snps(snps_dir, output_dir, thous_gen_file ):
+
+def calc_r2_for_input_snps(snps_dir, output_dir, thous_gen_file, min_r2_threshold=0.7):
     """"Calculates pariwise LD (r2) using plink --r2 inter-chr. See below for parameter details
 
         INPUTS:
@@ -91,7 +91,7 @@ def calc_r2_for_input_snps(snps_dir, output_dir, thous_gen_file ):
     #TO DO
     # multithread this
 
-
+    # TODO: change glob to a actual list of file taht are passed in?
     for snps_in_this_chr in glob.glob(snps_dir+"/chr*"):
 
         this_chr = os.path.split(snps_in_this_chr)[1].split("_")[0]  # e.g. chr1
@@ -99,17 +99,12 @@ def calc_r2_for_input_snps(snps_dir, output_dir, thous_gen_file ):
 
         # set up plink
         outputfile = os.path.join(plink_output_dir, "{}".format(this_chr))
-        plinkcmd = f'plink --bfile {thous_gen_file.format(this_chr_num)} --extract {snps_in_this_chr} --r2 inter-chr --ld-window-r2 0.7 --out {outputfile}'
+        plinkcmd = f'plink --bfile {thous_gen_file.format(this_chr_num)} --extract {snps_in_this_chr} --r2 inter-chr --ld-window-r2 {min_r2_threshold} --out {outputfile}'
+        logger.debug(plinkcmd)
 
-        # TODO: delete this... if there are any spaces in file paths, the script will break...
-        tempcmd = plinkcmd.replace('Google Drive', 'Google_Drive')
-        plinkcmd=[x.replace('Google_Drive','Google Drive') for x in tempcmd.split()]
-
-        logger.debug(' '.join(plinkcmd))
-
-        # plink_process = Popen(plinkcmd.split(), stdout=PIPE, stderr=PIPE)
-        plink_process = Popen(plinkcmd, stdout=PIPE, stderr=PIPE)
+        plink_process = Popen(plinkcmd.split(), stdout=PIPE, stderr=PIPE)
         plink_stdout, plink_stderr = plink_process.communicate()
+
 
         _ = error_check_plink_run(plink_stdout, plink_stderr, plinkcmd, logger=logger)
         any_warnings = warning_check_plink_run(plink_stdout, plink_stderr, plinkcmd, logger=logger)
@@ -137,8 +132,60 @@ def calc_r2_for_input_snps(snps_dir, output_dir, thous_gen_file ):
     store_ld_df['snpB_A'] = store_ld_df['SNP_B'] + "_" + store_ld_df['SNP_A']
     store_ld_df.to_csv(ld_summary_file, index=False, header=True, sep="\t")
 
-    logger.debug(f"Pairwise LD for all GWAS input snps saved to: {ld_summary_file}")
+    logger.debug(f"Pairwise LD for all input snps saved to: {ld_summary_file}")
     logger.info("Done calculing pariwise LD. It took {0:.2f} minutes.".format((time.time() - tstart)/60))
 
+
+    return store_ld_df
+
+
+def ld_expand_snp_list(snp_list_by_chr_files_written, plink_r2_output_dir, thous_gen_file):
+
+    keep_warnings= []
+    tstart = time.time()
+    for this_chr_num, snps_in_this_chr_file in snp_list_by_chr_files_written.items():
+
+
+        # set up plink to ld expand out to r2_ldexp_threshold
+        r2_ldexp_threshold = 0.7
+        plink_outputfile = os.path.join(plink_r2_output_dir, "chr{}".format(this_chr_num))
+        plinkcmd = f'plink --bfile {thous_gen_file.format(this_chr_num)} --ld-snp-list {snps_in_this_chr_file} --r2 inter-chr --ld-window-r2 {r2_ldexp_threshold} --out {plink_outputfile}'
+        logger.debug(plinkcmd)
+
+
+        plink_process = Popen(plinkcmd.split(), stdout=PIPE, stderr=PIPE)
+        plink_stdout, plink_stderr = plink_process.communicate()
+
+        any_errors = error_check_plink_run(plink_stdout, plink_stderr, plinkcmd, logger=logger)
+        any_warnings = warning_check_plink_run(plink_stdout, plink_stderr, plinkcmd, logger=logger)
+        keep_warnings.append(any_warnings)
+
+
+    # error check the plink run
+    if any_errors:
+        sys.exit("There were errors while running plink --r2 to ld expand input snps.")
+
+
+    if np.any(keep_warnings):
+        print("There were warnings while running plink --r2")
+
+
+
+    # combine together into one file
+    if not glob.glob(plink_r2_output_dir+"/chr*.ld"):
+        logger.error("Pairwise LD files were not found!\n Looked in {}".format(plink_r2_output_dir))
+
+    store_ld_df = pd.DataFrame()
+    for thischr in glob.glob(plink_r2_output_dir+"/chr*.ld"):
+
+        clump_df = pd.read_csv(thischr, sep="\s+")
+        store_ld_df = store_ld_df.append(clump_df.loc[:, ['SNP_A', 'SNP_B', 'R2']])
+
+
+    store_ld_df['snpA_B'] = store_ld_df['SNP_A'] + "_" + store_ld_df['SNP_B']
+    store_ld_df['snpB_A'] = store_ld_df['SNP_B'] + "_" + store_ld_df['SNP_A']
+
+
+    logger.debug("Done calculing pariwise LD. It took {0:.2f} minutes.".format((time.time() - tstart)/60))
 
     return store_ld_df

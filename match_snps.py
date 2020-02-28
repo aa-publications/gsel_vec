@@ -82,7 +82,7 @@ def get_snps_to_match(input_snps_file):
     # getting the list of lead GWAS snps from the plink --clump output file...
 
     df = pd.read_csv(input_snps_file, sep="\t")
-    snps_to_match = df.CHR_BP.values.tolist()
+    snps_to_match = df.lead_snp.values.tolist()
 
     return snps_to_match
 
@@ -230,7 +230,7 @@ def write_match_quality(snps_to_match_ordered, matched_snps, n_matches, num_matc
 def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root, analysis_name):
     start = time.time()
 
-    logger.info("Generating {:,} control sets for each gwas lead snp.".format(n_matches))
+    
     output_dir = os.path.join(output_root, '{}_matched_snps'.format(analysis_name))
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs(OutObj)
@@ -276,7 +276,8 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root, 
     # start multithreading - one SNP per thread
     num_threads = cpu_count()
     mstart = time.time()
-    logger.info("Using {:,} cores to created matched sets.".format(num_threads-1))
+    logger.info("Generating {:,} control sets for each lead snp using {:,} cores.".format(n_matches, num_threads-1))
+    
     pool = Pool(num_threads-1)
     partial_get_matched_snps = partial(get_matched_snps, n_matches=n_matches, anno_df=keep_anno_df, thresholds=thresholds)
     matched_snps_list = pool.map(partial_get_matched_snps, snps_to_match)

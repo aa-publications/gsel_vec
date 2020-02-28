@@ -21,7 +21,7 @@ from glob import glob
 import logging
 logger = logging.getLogger('main.{}'.format(__name__))
 
-sys.path.append("/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline")
+sys.path.append("/scratch/abraha1/gsel_/gsel_vec")
 from helper_general import Outputs
 
 DATE = datetime.now().strftime('%Y-%m-%d')
@@ -130,7 +130,7 @@ def shuffle_and_list_r2(x, max_n):
     control_snp =  [x.SNP_A.values[0]]
     ld_snps_of_control_snp =  x.SNP_B
     ldsnps_lst = list(ld_snps_of_control_snp)
-    
+
     r2_of_ld_snps =  x.R2
     r2_lst =  list(r2_of_ld_snps)
 
@@ -155,7 +155,7 @@ def shuffle_and_list(x, max_n):
     control_snp =  [x.SNP_A.values[0]]
     ld_snps_of_control_snp =  x.SNP_B
     ldsnps_lst = list(ld_snps_of_control_snp)
-    
+
     # r2_of_ld_snps =  x.R2
     # r2_lst =  list(r2_of_ld_snps)
 
@@ -186,7 +186,7 @@ def explode(df, lst_cols, fill_value='', preserve_index=False):
     idx_cols = df.columns.difference(lst_cols)
     # calculate lengths of lists
     lens = df[lst_cols[0]].str.len()
-    # preserve original index values    
+    # preserve original index values
     idx = np.repeat(df.index.values, lens)
     # create "exploded" DF
     res = (pd.DataFrame({
@@ -203,7 +203,7 @@ def explode(df, lst_cols, fill_value='', preserve_index=False):
     # revert the original index order
     res = res.sort_index()
     # reset index if requested
-    if not preserve_index:        
+    if not preserve_index:
         res = res.reset_index(drop=True)
     return res
 
@@ -213,7 +213,7 @@ def to_row_per_csnp(selected_ld_snps, n_control_snps):
     control_df = raw_control_df[~raw_control_df.isnull().any(1)].copy()
     control_df.reset_index(inplace=True, drop=True)
     control_df.columns = ['Set_{}'.format(num) for num in np.arange(1, control_df.shape[1]+1)]
-    return control_df 
+    return control_df
 
 def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_file, control_ld_dir, output_root, analysis_name):
 
@@ -225,17 +225,24 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj.add_output('ld_expanded_output' ,'ld_expanded_all_control_sets.tsv', add_root=True)
     OutObj.add_output('ld_r2_expanded_output' ,'r2_ld_expanded_all_control_sets.tsv', add_root=True)
-    
 
+    # %%
 
+    # lead_ld_counts_file='/scratch/abraha1/gsel_/gsel_vec/test/snp_list_output/testlist_clump/input_snps_with_binned_ldsnps_counts.tsv'
+    # gwas_snps_r2_file='/scratch/abraha1/gsel_/gsel_vec/test/snp_list_output/testlist_clump/input_and_ld_snps.tsv'
+    # matched_file='/scratch/abraha1/gsel_/gsel_vec/test/snp_list_output/testlist_matched_snps/matched_snps.tsv'
+    # output_root="/scratch/abraha1/gsel_/gsel_vec/test/snp_list_output"
+    # control_ld_dir='/scratch/abraha1/gsel_/gsel_vec/test/snp_list_output/testlist_get_ldsnps_for_control_snps/ld_snps_for_control_snps'
+    # analysis_name='test_ex'
 
+    # %%
     ###
     ###   set up ld thresholds
     ###
 
     # IMPORTANT: LD BINS MUST GO FROM HIGH TO LOW
-    ld_thresholds =['ld<=1.0', 'ld<=0.9']
-    # ld_thresholds =['ld<=0.9']
+    # ld_thresholds =['ld<=1.0', 'ld<=0.9']
+    ld_thresholds =['ld<=1.0']
 
 
 
@@ -263,6 +270,7 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
     ld_counts_df = pd.read_csv(lead_ld_counts_file, sep="\t")
     lead_gwas_snps = ld_counts_df.lead_snp.unique().tolist() # determine the lead SNPs from the ld count table (since this includes input lead snps that don't have any snps in LD )
 
+
     # add row for lead SNP in the 'ld_snp' column (this is to get thr right format for the output)
     temp_lead_df = pd.DataFrame({'lead_snp': lead_gwas_snps, 'ld_snp': lead_gwas_snps, 'R2': [1.0]*len(lead_gwas_snps)})
     final_lead_ld_df = pd.concat((gwas_lead_ld_df, temp_lead_df),axis=0)
@@ -278,6 +286,7 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
     temp_ld_counts_df = ld_counts_df.copy()
     temp_ld_counts_df.set_index('lead_snp', inplace=True)
     ordered_ld_counts_df = temp_ld_counts_df.reindex(ordered_lead_snps)
+
 
 
 
@@ -332,8 +341,6 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
 
         # create a binary vector for each input/lead snp where 1 is a placeholder to a required LD SNP
         inner_vec_length = ordered_ld_counts_df.loc[:, ld_threshold].max() + 1  # +1 so that the control snp is included as the first element
-
-
         padded_mask_per_input_snp = np.array( [  np.pad(np.ones(x+1), (0, inner_vec_length - (x+1)) , mode='constant') for x in ordered_ld_counts_df.loc[:, ld_threshold]])
         assert padded_mask_per_input_snp.shape[0] == n_lead_snps, "number of lead snps don't match with mask array "
 
@@ -365,64 +372,74 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
 
         par_shuf = partial(shuffle_and_list, max_n = ld_mask.shape[2])
         par_r2_shuf = partial(shuffle_and_list_r2, max_n = ld_mask.shape[2])
-    
+
 
         # for each input/lead snp
         all_snps = list()
         all_r2 = list()
         for input_snp in ordered_lead_snps:
             # input_snp = ordered_lead_snps[0]
-    
+
             # get all control snps and remember the order!
             csnps_for_isnp = matched_df.loc[matched_df['snps_to_match'] == input_snp, ['Set_{}'.format(x) for x in range(1,n_control_snps+1) ]].values.flatten()
 
             uniq_csnps = np.unique(csnps_for_isnp)
             csnps_indices =  dict(zip(uniq_csnps, [np.where(csnps_for_isnp == uniq_csnp)[0].tolist() for uniq_csnp in uniq_csnps]))
-            
-    
-            
+
+
             # update r2 table with control snps that are not in it with 'None' as a placeholder
             missing_control_snps =  set(csnps_for_isnp) - set(filt_ld_df.SNP_A.unique())
             miss_df = pd.DataFrame({'SNP_A': list(missing_control_snps), 'SNP_B':'None'})
             miss_r2_df = pd.DataFrame({'SNP_A': list(missing_control_snps), 'SNP_B':'None', 'R2':'None'})
-            
+
             updated_ld_df = pd.concat((miss_df, filt_ld_df))
             updated_r2_ld_df = pd.concat((miss_r2_df, filt_r2_ld_df))
 
+            # collect all the r2 for LD snps into one row
             ld_r2_array_df = updated_r2_ld_df.loc[ updated_r2_ld_df['SNP_A'].isin(csnps_for_isnp)].groupby('SNP_A', sort=False).apply(par_r2_shuf).reset_index()
             ld_r2_array_df.rename({0:'r2_ld_array'}, axis=1, inplace=True)
 
+            # collect all the D snps into one row
             ld_array_df = updated_ld_df.loc[ updated_ld_df['SNP_A'].isin(csnps_for_isnp)].groupby('SNP_A', sort=False).apply(par_shuf).reset_index()
             ld_array_df.rename({0:'ld_array'}, axis=1, inplace=True)
-            
-            # order control snps, this is necessary to preserve order between different ld bin iterations 
+
+            # order control snps, this is necessary to preserve order between different ld bin iterations
             ld_array_df['order'] = ld_array_df.SNP_A.map(csnps_indices)
             ordered_ld_array_df = explode(ld_array_df, 'order')
             ordered_ld_array_df.sort_values('order', inplace=True)
-            
+
+            # order for the r2 dataframe as well
             ld_r2_array_df['order'] = ld_r2_array_df.SNP_A.map(csnps_indices)
             ordered_ld_r2_array_df = explode(ld_r2_array_df, 'order')
-            ordered_ld_r2_array_df.sort_values('order', inplace=True)                
-            
-            
-            # get arrays of control snps w/ ld snps
+            ordered_ld_r2_array_df.sort_values('order', inplace=True)
+
+
+            # extract arrays of ld snps for each control snp
             all_snps.append(ordered_ld_array_df.loc[:,'ld_array'].values.tolist())
             all_r2.append(ordered_ld_r2_array_df.loc[:,'r2_ld_array'].values.tolist())
-        
-        
+
+
+
         # select LD SNPs based on ld_mask
         ld_snps_array = np.array(all_snps, dtype='object', order='F')
         ld_snps_r2_array = np.array(all_r2, dtype='object', order='F')
         selected_ld_snps = np.where( np.array(ld_mask, dtype=bool), ld_snps_array, '')
         selected_ld_r2_snps = np.where( np.array(ld_mask, dtype=bool), ld_snps_r2_array, '')
 
+
         # from one column per control set, to ...
         # one row per control snp (lead control snp being first row in each group)
         control_df = to_row_per_csnp(selected_ld_snps,n_control_snps)
         control_r2_df = to_row_per_csnp(selected_ld_r2_snps, n_control_snps)
-        
-        # lead snp columns to concat w/ control snps df
+
+
+        # create lead snp columns to concat w/ control snps df
         r2_filt_final_lead_ld_df = final_lead_ld_df.loc[  (final_lead_ld_df['R2'] > lower_ld_threshold)  & (final_lead_ld_df['R2'] <= uppper_ld_threshold)].reset_index(drop=True)
+
+
+        assert control_df.shape[0] == r2_filt_final_lead_ld_df.shape[0], "Number of rows do not match between the two dataframes (lead snps and control snps) that are going to be concatentated "
+        assert control_r2_df.shape[0] == r2_filt_final_lead_ld_df.shape[0], "Number of rows do not match between the two dataframes (lead snps and control snps) that are going to be concatentated "
+
 
         if (uppper_ld_threshold != 1):
             # add back the row containg the lead SNP
@@ -438,7 +455,7 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
 
 
 
-        # concat
+        # concat lead snp and control snps data frames
         lead_control_ld_expanded_df = pd.concat( (r2_filt_final_lead_ld_df, control_df), axis=1, ignore_index=False)
         lead_control_ld_expanded_r2_df = pd.concat( (r2_filt_final_lead_ld_df, control_r2_df), axis=1, ignore_index=False)
         ld_bins_expanded_df = ld_bins_expanded_df.append(lead_control_ld_expanded_df)
@@ -448,16 +465,16 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
     # remove the extra rows used to keep the control snps in order...
     dedup_df = ld_bins_expanded_df[~ld_bins_expanded_df.duplicated(subset=['lead_snp','ld_snp','R2'], keep='first')].sort_values(['lead_snp','ld_snp'])
     dedup_df.sort_values(['lead_snp','lead_snp_bool'], ascending=False, inplace=True)
-    
+
     dedup_r2_df = ld_bins_r2_expanded_df[~ld_bins_r2_expanded_df.duplicated(subset=['lead_snp','ld_snp','R2'], keep='first')].sort_values(['lead_snp','ld_snp'])
     dedup_r2_df.sort_values(['lead_snp','lead_snp_bool'], ascending=False, inplace=True)
 
-    # round 
+    # round
     dedup_r2_df.replace('None', np.nan, inplace=True)
     dedup_r2_df = dedup_r2_df.round(2)
     dedup_r2_df.fillna('None', inplace=True)
-    
-    
+
+
     # write
     dedup_df.to_csv(OutObj.get('ld_expanded_output'), sep="\t", index=False)
     dedup_r2_df.to_csv(OutObj.get('ld_r2_expanded_output'), sep="\t", index=False)

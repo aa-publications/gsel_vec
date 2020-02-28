@@ -13,7 +13,7 @@ import time
 import argparse
 import numpy as np
 import pandas as pd
-from datetime import datetime  
+from datetime import datetime
 from subprocess import Popen, PIPE
 
 from helper_general import Outputs, error_check_plink_run, warning_check_plink_run
@@ -66,7 +66,7 @@ def parse_input_args():
 
         ### REQUIRED ARGUMENTS IN ORDER
         parser.add_argument('control_file', action='store', type=str, help="output from match_snps.py")
-        
+
         parser.add_argument('one_kg_file', action='store', type=str, help="full path to 1KG file with open template for chromosome")
         parser.add_argument('output_file', action='store', type=str)
         parser.add_argument('analysis_name', action='store', type=str, help="the name of this analysis")
@@ -90,21 +90,22 @@ def parse_input_args():
     return csnps_file, thous_gen_file, output_root, analysis_name
 
 
-def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, analysis_name):
-    sstart = time.time()
+def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, analysis_name, clump_r2_threshold=0.8):
 
+    sstart = time.time()
     logger.info("Starting to find LD snps for control snps.")
 
+    # set up outputs
     output_dir = os.path.join(output_root, '{}_get_ldsnps_for_control_snps'.format(analysis_name))
     OutObj = Outputs(output_dir, overwrite=True)
     OutputObj = set_up_outputs(OutObj)
 
 
 
-    # 1) load all ld control snps
+    # load all ld control snps
     snps_df = pd.read_csv(control_snps_file, sep="\t")
 
-    # 2) go from wide to long format
+    # convert wide to long format
     wide_snp_df = pd.wide_to_long(snps_df, stubnames='Set_', i="snps_to_match", j="Set")
     wide_snp_df.reset_index(inplace=True)
     wide_snp_df['chromosome']  = wide_snp_df.Set_.apply(lambda x: int(x.split(":")[0]))
@@ -115,21 +116,21 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
 
         snps_to_write = wide_snp_df.loc[wide_snp_df['chromosome'] ==chrm, 'Set_' ].unique().tolist()
 
-        if len(snps_to_write) > 0: 
+        if len(snps_to_write) > 0:
             with open(OutputObj.get('ldsnp_list_file').format(chrm), 'w') as fw:
                 for ldsnp in snps_to_write:
                     fw.write(ldsnp + "\n")
-                    
-                    
-    # 4) run plink r2            
+
+
+    # 4) run plink r2
     for chrm in np.arange(1,23,1):
-        
+
         # skip chromosome if the file does not exists...
-        if not os.path.isfile(OutputObj.get('ldsnp_list_file').format(chrm)): 
+        if not os.path.isfile(OutputObj.get('ldsnp_list_file').format(chrm)):
             continue
 
-
-        plinkcmd = f"plink --bfile {thous_gen_file.format(chrm)} --r2 dprime --ld-snp-list {OutputObj.get('ldsnp_list_file').format(chrm)} --ld-window-kb 1000 --ld-window 99999 --ld-window-r2 0.6 --out {OutputObj.get('plink_output_file').format(chrm)}"
+        # ld-window-r2  --> minimum r2 requrieed to report in output
+        plinkcmd = f"plink --bfile {thous_gen_file.format(chrm)} --r2 dprime --ld-snp-list {OutputObj.get('ldsnp_list_file').format(chrm)} --ld-window-kb 1000 --ld-window 99999 --ld-window-r2 {clump_r2_threshold} --out {OutputObj.get('plink_output_file').format(chrm)}"
 
 
         # 5) start plink cmd

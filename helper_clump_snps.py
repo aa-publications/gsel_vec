@@ -204,3 +204,21 @@ def write_gwas_snps_by_chr(gwas_df, gwas_stats_by_chr_dir, gwas_stats_by_chr_snp
 
         # write to SNP(chr:BP) to file
         gwas_df.loc[gwas_df[chromosome_column] == this_chr, ["variantID"]].to_csv(snps_only_file, sep="\t", index=False, header=None)
+
+
+def write_snp_list_by_chr(snp_list,  snps_by_chr_snps_only_dir):
+    """ split input snp list by chromosome into different text files"""
+
+    snps_df = pd.DataFrame(snp_list, columns=['chr_pos'])
+    snps_df['chr'],snps_df['pos'] = snps_df.chr_pos.str.split(":", 1).str
+    snps_df.sort_values('chr',inplace=True)
+
+
+    files_written = {}
+    for this_chr in snps_df.loc[:, 'chr'].unique():
+
+        snps_only_file = os.path.join(snps_by_chr_snps_only_dir, "chr{}_from_snplist.txt")
+        snps_df.loc[snps_df['chr'] == this_chr, 'chr_pos'].to_csv(snps_only_file.format(this_chr), sep="\t", index=False, header=False)
+        files_written[this_chr] =snps_only_file.format(this_chr)
+
+    return files_written
