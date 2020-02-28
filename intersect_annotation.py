@@ -296,8 +296,6 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
     logger.info("Done intersection all annotations. Took {:.2f} minutes.".format( (time.time() - mstart)/60))
 
 
-
-
     # unpack and write
     for anno_result in  intersect_ouputs:
 
@@ -312,6 +310,10 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
         combined_df = pd.merge( pd.merge(by_control_set_overlap.loc[:, ['lead_snp','mean_prop','std_prop']],
                     median_df.loc[:, ['lead_snp','lead_snp_anno']], on='lead_snp', how='outer'),
                     pvalue_df.loc[:, ['lead_snp','pvalue','reject_h0_benj_hoch','corrected_pval_benj_hoch']], on='lead_snp', how='outer')
+
+        combined_df.mean_prop = combined_df.mean_prop.round(2)
+        combined_df.std_prop = combined_df.std_prop.round(2)
+        combined_df.lead_snp_anno = combined_df.lead_snp_anno.round(4)
 
 
         combined_df.to_csv(OutObj.get('{}_enrichment_summary'.format(anno_label)), sep="\t", index=False)
