@@ -44,7 +44,7 @@ def pooled_overlap(long_df):
 def per_set_overlap(long_df):
 
     # annotation overlap: summarize by lead snp per control set then take mean
-    by_control_set_overlap_df = long_df.groupby(['lead_snp','set'])['anno', 'is_na'].count().reset_index() # is_na should just be a total count 
+    by_control_set_overlap_df = long_df.groupby(['lead_snp','set'])['anno', 'is_na'].count().reset_index() # is_na should just be a total count
     by_control_set_overlap_df['prop_coverage'] = ((by_control_set_overlap_df['anno']/by_control_set_overlap_df['is_na'])*100).round(2)
 
 
@@ -227,7 +227,7 @@ def calc_pval_and_summary(values, control_cols):
     return summary
 
 
-def intersect_all_annotations(anno_path_dict, matched_file, output_root, analysis_name):
+def intersect_all_annotations(anno_path_dict, matched_file, output_root):
     """For matched control sets, intersect them with a selection annotation and return the mean and median for each locus.
             * each locus is defined by lead snp and LD snps (as defined earlier in the pipeline)
 
@@ -239,8 +239,7 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root, analysi
         full path to the table with ld expanded lead snps and  control sets
     output_root : str
         path to which output directory for this analysis should be created
-    analysis_name : str
-        a prefix for this analysis; will be used as a prefix for hte output directory that is created
+
 
     Returns
     -------
@@ -263,7 +262,7 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root, analysi
     ### set up outputs
     ###
 
-    output_dir = os.path.join(output_root, '{}_annotation_intersection'.format(analysis_name))
+    output_dir = os.path.join(output_root, 'selection_intersected_matched_sets')
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs(OutObj, anno_label_list)
 
@@ -316,13 +315,3 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root, analysi
 
 
     return intersect_ouputs
-
-#
-# # -----------
-# # test
-# # -----------
-# anno_dir="/scratch/abraha1/gsel_/gsel_pipeline_vec/create_annotations/anno_dicts"
-# anno_path_dict = {'fst': os.path.join(anno_dir,'fst_eas_afr_snpsnap_eur_ld0.1_collection.pickle'), 'fst2': os.path.join(anno_dir,'fst_eas_afr_snpsnap_eur_ld0.1_collection.pickle')}
-# matched_file = "/scratch/abraha1/gsel_/gsel_pipeline_vec/test/bmi_small_vec/giant_bmi_small_ld_expand_control_snps/ld_expanded_all_control_sets.tsv"
-# output_root = "/scratch/abraha1/gsel_/gsel_pipeline_vec/test/bmi_small_vec/"
-# analysis_name = "test"

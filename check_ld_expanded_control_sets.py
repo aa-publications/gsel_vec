@@ -34,71 +34,48 @@ logger = logging.getLogger('main.{}'.format(__name__))
 
 def parse_input_args():
 
+    # TODO: convert all args to requried args
 
-    # TODO: delete (only for dev purposes)
-    if len(sys.argv) != 7:
+    parser = argparse.ArgumentParser(description='Run expand control set.')
 
-        print("running dev arguments ... delete later")
-        root="/scratch/abraha1/gsel_/gsel_pipeline_vec/test/bmi_small_vec"
-        snpsnap_db_file="/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_pipeline_vec/snpsnap_database/ld0.1_collection.tab.pickle"
-        ld_expanded_control_sets_file= os.path.join(root, 'giant_bmi_small_ld_expand_control_snps/ld_expanded_all_control_sets.tsv')
-        lead_snps_ld_counts_file=os.path.join(root, 'giant_bmi_small_clump/lead_gwas_snps_with_ldsnps_counts.txt')
-        ld_expanded_control_sets_r2_file = os.path.join(root, "giant_bmi_small_ld_expand_control_snps/r2_ld_expanded_all_control_sets.tsv")
-        ldbuds_r2_threshold="friends_ld05"
-        output_root=root
-        analysis_name="dev_vec"
+    parser.add_argument('snpsnap_db_file',
+                        action='store', type=str,
+                        help="tsv of snpsnap database at a specific r2 threshold defining a 'locus' ")
 
+    parser.add_argument('ld_expanded_control_sets_file',
+                        action='store', type=str,
+                        help='tsv of ld expanded control snps')
 
-    else:
+    parser.add_argument('lead_snps_ld_counts_file',
+                        action='store', type=str,
+                        help='tsv of # of ld snps required for each input/lead gwas snp')
 
-        # TODO: convert all args to requried args
+    parser.add_argument('ld_expanded_control_sets_r2_file',
+                        action='store', type=str,
+                        help='tsv of r2 values of ld expanded control snps')
 
-        parser = argparse.ArgumentParser(description='Run expand control set.')
+    parser.add_argument('ldbuds_r2_threshold',
+                        action='store', type=int,
+                        help='column name from which to select from in the snpsnap db indicating the ld buddies r2 threshold')
 
-        parser.add_argument('snpsnap_db_file',
-                            action='store', type=str,
-                            help="tsv of snpsnap database at a specific r2 threshold defining a 'locus' ")
-
-        parser.add_argument('ld_expanded_control_sets_file',
-                            action='store', type=str,
-                            help='tsv of ld expanded control snps')
-
-        parser.add_argument('lead_snps_ld_counts_file',
-                            action='store', type=str,
-                            help='tsv of # of ld snps required for each input/lead gwas snp')
-
-        parser.add_argument('ld_expanded_control_sets_r2_file',
-                            action='store', type=str,
-                            help='tsv of r2 values of ld expanded control snps')
-
-        parser.add_argument('ldbuds_r2_threshold',
-                            action='store', type=int,
-                            help='column name from which to select from in the snpsnap db indicating the ld buddies r2 threshold')
-
-        parser.add_argument('output_root',
-                            action='store', type=str,
-                            help="output_dir")
-
-
-        parser.add_argument('analysis_name',
-                            action='store', type=str,
-                            help="the name of this analysis")
-
-
-        # retrieve passed arguments
-        args = parser.parse_args()
-        snpsnap_db_file = args.snpsnap_db_file
-        ld_expanded_control_sets_file = args.ld_expanded_control_sets_file
-        lead_snps_ld_counts_file = args.lead_snps_ld_counts_file
-        ld_expanded_control_sets_r2_file = args.ld_expanded_control_sets_r2_file
-        ldbuds_r2_threshold = args.ldbuds_r2_threshold
-        output_root = args.output_root
-        analysis_name = args.analysis_name
+    parser.add_argument('output_root',
+                        action='store', type=str,
+                        help="output_dir")
 
 
 
 
-    return snpsnap_db_file, ld_expanded_control_sets_file, lead_snps_ld_counts_file, ld_expanded_control_sets_r2_file, ldbuds_r2_threshold, output_root, analysis_name
+    # retrieve passed arguments
+    args = parser.parse_args()
+    snpsnap_db_file = args.snpsnap_db_file
+    ld_expanded_control_sets_file = args.ld_expanded_control_sets_file
+    lead_snps_ld_counts_file = args.lead_snps_ld_counts_file
+    ld_expanded_control_sets_r2_file = args.ld_expanded_control_sets_r2_file
+    ldbuds_r2_threshold = args.ldbuds_r2_threshold
+    output_root = args.output_root
+
+
+    return snpsnap_db_file, ld_expanded_control_sets_file, lead_snps_ld_counts_file, ld_expanded_control_sets_r2_file, ldbuds_r2_threshold, output_root
 
 def summarize_across_sets(match_param_col, lead_snps_only_df, control_sets_df, db, control_cols):
 
@@ -262,7 +239,7 @@ def summarize_ldscore(r2_df, control_cols):
 
     return lead_control_ldscore_df
 
-def check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead_snps_ld_counts_file, ld_expanded_control_sets_r2_file, ldbuds_r2_threshold, output_root, analysis_name):
+def check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead_snps_ld_counts_file, ld_expanded_control_sets_r2_file, ldbuds_r2_threshold, output_root):
     # note:
     #       ldbuds_r2_threshold must be in ''
 
@@ -272,7 +249,7 @@ def check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead
 
     # set up outputs
     logger.info("Analyzing LD expanded control sets...")
-    output_dir = os.path.join(output_root, '{}_check_ld_expand_control_snps'.format(analysis_name))
+    output_dir = os.path.join(output_root, 'check_ld_expanded_matached_sets')
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs(OutObj)
 
@@ -367,5 +344,5 @@ def check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead
 # -----------
 
 if __name__ == "__main__":
-    snpsnap_db_file, ld_expanded_control_sets_file, lead_snps_ld_counts_file, ld_expanded_control_sets_r2_file, ldbuds_r2_threshold, output_dir, analysis_name = parse_input_args()
-    _ = check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead_snps_ld_counts_file, ld_expanded_control_sets_r2_file, ldbuds_r2_threshold, output_dir, analysis_name)
+    snpsnap_db_file, ld_expanded_control_sets_file, lead_snps_ld_counts_file, ld_expanded_control_sets_r2_file, ldbuds_r2_threshold, output_dir = parse_input_args()
+    _ = check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead_snps_ld_counts_file, ld_expanded_control_sets_r2_file, ldbuds_r2_threshold, output_dir)

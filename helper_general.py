@@ -31,7 +31,7 @@ class Outputs:
         ''' output_root : Full path of output directory. '''
 
         if os.path.isdir(output_root):
-            
+
 
             if not overwrite:
                 suffix = 0
@@ -46,7 +46,7 @@ class Outputs:
             try:
                 os.mkdir(output_root)
             except FileExistsError:
-                pass 
+                pass
 
 
         self.root_dir = output_root
@@ -161,7 +161,6 @@ def error_check_plink_run(plink_stdout, plink_stderr, plinkcmd, logger=None):
     return any_errors
 
 
-
 def warning_check_plink_run(plink_stdout, plink_stderr, plinkcmd, logger=None):
 
     # get warnings
@@ -176,3 +175,33 @@ def warning_check_plink_run(plink_stdout, plink_stderr, plinkcmd, logger=None):
     any_warnings = (np.any(warnings_bool) | np.any(warnings_bool_stderr))
 
     return any_warnings
+
+
+
+def start_logger(log_file):
+
+    logger = logging.getLogger('main')
+    logger.setLevel(logging.DEBUG)
+
+    # format1 = logging.Formatter("%(levelname)s - %(asctime)s %(name)s line#:%(lineno)d --> %(message)s")
+    format1 = logging.Formatter("%(levelname)s [%(asctime)s] - %(name)s line:%(lineno)d -> %(message)s","%x %H:%M:%S")
+    format2 = logging.Formatter("%(message)s")
+
+
+    fh = logging.FileHandler(log_file, mode='w', encoding='utf-8')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(format1)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(format2)
+
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+    dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f'Logging to {log_file} start on {dt_string}')
+
+    return logger
+
+

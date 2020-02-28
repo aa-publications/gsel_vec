@@ -53,28 +53,26 @@ def parse_input_args():
                         help="number of matching snps requested")
     parser.add_argument('ldbud_r2', action='store', type=str,
                         help="r2 threshold for LDbuddies. must be formatted as 'friends_ld05' or 'friends_ld06' etc. ")
-    
+
     parser.add_argument('db_file', action='store', type=str,
                         help="full path to snpsnap downloaded database file")
-                        
-                        
+
+
     parser.add_argument('output_root', action='store', type=str,
                         help="output directory")
-    parser.add_argument('analysis_name', action='store', type=str,
-                        help="the name of this analysis")
+
 
     # retrieve passed arguments
     results = parser.parse_args()
     input_snps_file = results.input_snps_file
     n_matches = results.n_matches
-    analysis_name = results.analysis_name
     ld_buddies_r2 = results.ldbud_r2
     db_file = results.db_file
     output_root = results.output_root
 
 
 
-    return input_snps_file, n_matches, ld_buddies_r2, db_file, output_root, analysis_name
+    return input_snps_file, n_matches, ld_buddies_r2, db_file, output_root,
 
 
 def get_snps_to_match(input_snps_file):
@@ -99,13 +97,12 @@ def set_up_outputs(OutputObj):
     return OutputObj
 
 
-def write_header_to_summary_file(fsummary,input_snps_file, n_matches, analysis_name, ld_buddies_r2, output_dir):
+def write_header_to_summary_file(fsummary,input_snps_file, n_matches, ld_buddies_r2, output_dir):
 
     fsummary.writelines("Running:  \n\t{} on {}\n".format(sys.argv[0], datetime.now()))
     fsummary.writelines("Parameters:\n")
     fsummary.writelines(f"\tinput_snps_file:  {input_snps_file}\n")
     fsummary.writelines(f"\tnum_matches_requested:  {n_matches}\n")
-    fsummary.writelines(f"\tanalysis name:  {analysis_name}\n")
     fsummary.writelines(f"\tr2_for_ld_buddies:  {ld_buddies_r2}\n")
     fsummary.writelines(f"\toutput_dir:  {output_dir}\n")
 
@@ -227,17 +224,17 @@ def write_match_quality(snps_to_match_ordered, matched_snps, n_matches, num_matc
     fsummary.writelines(">>> Median Match Size Percentage: {}\n".format(median_match_size_percent))
 
 
-def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root, analysis_name):
+def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     start = time.time()
 
-    
-    output_dir = os.path.join(output_root, '{}_matched_snps'.format(analysis_name))
+
+    output_dir = os.path.join(output_root, 'matched_snps_for_input_snps')
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs(OutObj)
 
     # log script details
     fsummary = open(OutObj.get('match_summary_file'), 'w')
-    write_header_to_summary_file(fsummary, input_snps_file, n_matches, analysis_name, ld_buddies_r2, OutObj.root_dir)
+    write_header_to_summary_file(fsummary, input_snps_file, n_matches, ld_buddies_r2, OutObj.root_dir)
 
 
     ###
@@ -277,7 +274,7 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root, 
     num_threads = cpu_count()
     mstart = time.time()
     logger.info("Generating {:,} control sets for each lead snp using {:,} cores.".format(n_matches, num_threads-1))
-    
+
     pool = Pool(num_threads-1)
     partial_get_matched_snps = partial(get_matched_snps, n_matches=n_matches, anno_df=keep_anno_df, thresholds=thresholds)
     matched_snps_list = pool.map(partial_get_matched_snps, snps_to_match)
@@ -322,9 +319,9 @@ if __name__ == '__main__':
     #   set up
     ###
 
-    input_snps_file, n_matches, ld_buddies_r2, db_file,  output_root, analysis_name = parse_input_args()
+    input_snps_file, n_matches, ld_buddies_r2, db_file,  output_root = parse_input_args()
 
 
 
-    _ = match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root, analysis_name)
+    _ = match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root)
 

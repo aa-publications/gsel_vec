@@ -69,7 +69,7 @@ def parse_input_args():
 
         parser.add_argument('one_kg_file', action='store', type=str, help="full path to 1KG file with open template for chromosome")
         parser.add_argument('output_file', action='store', type=str)
-        parser.add_argument('analysis_name', action='store', type=str, help="the name of this analysis")
+
 
         # control_file
         #  -- this is the output from match_snps.py
@@ -83,20 +83,20 @@ def parse_input_args():
         csnps_file = results.control_file
         thous_gen_file = results.one_kg_file
         output_root = results.output_file
-        analysis_name = results.analysis_name
 
 
 
-    return csnps_file, thous_gen_file, output_root, analysis_name
+
+    return csnps_file, thous_gen_file, output_root
 
 
-def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, analysis_name, clump_r2_threshold=0.8):
+def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root,  clump_r2_threshold=0.8):
 
     sstart = time.time()
     logger.info("Starting to find LD snps for control snps.")
 
     # set up outputs
-    output_dir = os.path.join(output_root, '{}_get_ldsnps_for_control_snps'.format(analysis_name))
+    output_dir = os.path.join(output_root, 'ld_snps_for_control_snps')
     OutObj = Outputs(output_dir, overwrite=True)
     OutputObj = set_up_outputs(OutObj)
 
@@ -157,7 +157,7 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
 
 if __name__ == "__main__":
 
-    control_snps_file, thous_gen_file,  output_root, analysis_name = parse_input_args()
+    control_snps_file, thous_gen_file,  output_root = parse_input_args()
 
-    get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, analysis_name)
+    get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root)
 

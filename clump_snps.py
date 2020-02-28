@@ -118,18 +118,15 @@ def parse_input_args():
                             action='store', type=str,
                             help='path to dir where output will be stored')
 
-        parser.add_argument('-n','--analysis_name', dest='analysis_name',
-                            action='store', type=str,
-                            help='the name of this analysis')
 
         argparser = parser.parse_args()
         gwas_summary_file = argparser.gwas_file
         thous_gen_file = argparser.one_kg_file
         output_root = argparser.output_root
-        analysis_name = argparser.analysis_name
 
 
-    return gwas_summary_file,thous_gen_file,  output_root, analysis_name
+
+    return gwas_summary_file,thous_gen_file,  output_root
 
 def set_up_outputs(OutputObj):
 
@@ -216,16 +213,9 @@ def force_input_snp_in_first_col(keep_autosomal_snps, og_store_ld_df):
     store_ld_df = store_ld_df.loc[:, ['SNP_A','SNP_B','snpA_B','snpB_A','R2']]
     return store_ld_df
 
-def clump_snps(gwas_summary_file, output_root, analysis_name, thous_gen_file):
+def clump_snps(gwas_summary_file, output_root, thous_gen_file):
 
-    #test
-    gwas_summary_file="/scratch/abraha1/gsel_/gsel_vec/test/input_data/bmi_small.test"
-    output_root ="/scratch/abraha1/gsel_/gsel_vec/test//snp_list_output/"
-    analysis_name ="bbobo"
-    thous_gen_file = '/scratch/abraha1/gsel_/gsel_vec/1kg/EUR.chr{}.phase3.nodups'
-
-
-    output_dir = os.path.join(output_root, '{}_clump'.format(analysis_name))
+    output_dir = os.path.join(output_root, 'ld_clump_inputs')
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs(OutObj)
 
@@ -344,18 +334,11 @@ def clump_snps(gwas_summary_file, output_root, analysis_name, thous_gen_file):
     return OutObj
 
 
-def clump_snp_list(snps_list_file, output_root, analysis_name, thous_gen_file, clump_r2_threshold=0.9):
-
-
-    # # test
-    # snps_list_file="/scratch/abraha1/gsel_/gsel_vec/test/input_data/rand_snp_list.txt"
-    # output_root="/scratch/abraha1/gsel_/gsel_vec/test/snp_list_output"
-    # analysis_name="test"
-    # thous_gen_file = '/scratch/abraha1/gsel_/gsel_vec/1kg/EUR.chr{}.phase3.nodups'
+def clump_snp_list(snps_list_file, output_root, thous_gen_file, clump_r2_threshold=0.9):
 
 
     # set up outputs
-    output_dir = os.path.join(output_root, '{}_clump'.format(analysis_name))
+    output_dir = os.path.join(output_root, 'ld_clump_inputs')
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs_for_snp_list(OutObj)
 
@@ -476,7 +459,7 @@ def clump_snp_list(snps_list_file, output_root, analysis_name, thous_gen_file, c
 if __name__ == "__main__":
 
 
-    gwas_summary_file, thous_gen_file,  output_dir, analysis_name = parse_input_args()
+    gwas_summary_file, thous_gen_file,  output_dir = parse_input_args()
 
 
-    _ = clump_snps(gwas_summary_file,  output_dir, analysis_name, thous_gen_file)
+    _ = clump_snps(gwas_summary_file,  output_dir, thous_gen_file)

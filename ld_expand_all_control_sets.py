@@ -35,61 +35,41 @@ DATE = datetime.now().strftime('%Y-%m-%d')
 def parse_input_args():
 
 
+    # TODO: convert all args to requried args
 
-    # TODO: delete (only for dev purposes)
-    if len(sys.argv) != 6:
+    parser = argparse.ArgumentParser(description='Run expand control set.')
 
-        print("running dev arguments ... delete later")
-        root="/scratch/abraha1/gsel_/gsel_pipeline_vec/test/bmi_small_vec"
-        lead_ld_counts_file=os.path.join(root, "giant_bmi_small_clump/lead_gwas_snps_with_ldsnps_counts.txt")
-        gwas_snps_r2_file=os.path.join(root, "giant_bmi_small_clump/lead_gwas_snp_and_ld_snp_r2.tsv")
-        matched_file=os.path.join(root, "giant_bmi_small_matched_snps/matched_snps.tsv")
-        control_ld_dir=os.path.join(root, "giant_bmi_small_get_ldsnps_for_control_snps/ld_snps_for_control_snps")
-        output_dir=root
-        analysis_name="dev_vec"
+    parser.add_argument('lead_ld_counts_file',
+                        action='store', type=str,
+                        help="table of lead GWAS SNPs")
 
-    else:
+    parser.add_argument('gwas_snps_r2_file',
+                        action='store', type=str,
+                        help='table of r2 between gwas snps')
 
-        # TODO: convert all args to requried args
+    parser.add_argument('matched_file',
+                        action='store', type=str,
+                        help='input/lead gwas snps with matched SNPs')
 
-        parser = argparse.ArgumentParser(description='Run expand control set.')
+    parser.add_argument('control_ld_dir',
+                        action='store', type=int,
+                        help='directory with ld SNPs for control snps')
 
-        parser.add_argument('lead_ld_counts_file',
-                            action='store', type=str,
-                            help="table of lead GWAS SNPs")
+    parser.add_argument('output_dir',
+                        action='store', type=str,
+                        help="output_dir")
 
-        parser.add_argument('gwas_snps_r2_file',
-                            action='store', type=str,
-                            help='table of r2 between gwas snps')
-
-        parser.add_argument('matched_file',
-                            action='store', type=str,
-                            help='input/lead gwas snps with matched SNPs')
-
-        parser.add_argument('control_ld_dir',
-                            action='store', type=int,
-                            help='directory with ld SNPs for control snps')
-
-        parser.add_argument('output_dir',
-                            action='store', type=str,
-                            help="output_dir")
+    # retrieve passed arguments
+    args = parser.parse_args()
+    lead_ld_counts_file = args.lead_ld_counts_file
+    gwas_snps_r2_file = args.gwas_snps_r2_file
+    matched_file = args.matched_file
+    control_ld_dir = args.control_ld_dir
+    output_dir = args.output_dir
 
 
-        parser.add_argument('analysis_name',
-                            action='store', type=str,
-                            help="the name of this analysis")
 
-        # retrieve passed arguments
-        args = parser.parse_args()
-        lead_ld_counts_file = args.lead_ld_counts_file
-        gwas_snps_r2_file = args.gwas_snps_r2_file
-        matched_file = args.matched_file
-        control_ld_dir = args.control_ld_dir
-        output_dir = args.output_dir
-        analysis_name = args.analysis_name
-
-
-    return lead_ld_counts_file, gwas_snps_r2_file, matched_file, control_ld_dir, output_dir, analysis_name
+    return lead_ld_counts_file, gwas_snps_r2_file, matched_file, control_ld_dir, output_dir
 
 def force_ld_control_snps(ld_df, controls_snps):
     # make sure that the control SNPs are all in 'SNP_A'
@@ -215,13 +195,13 @@ def to_row_per_csnp(selected_ld_snps, n_control_snps):
     control_df.columns = ['Set_{}'.format(num) for num in np.arange(1, control_df.shape[1]+1)]
     return control_df
 
-def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_file, control_ld_dir, output_root, analysis_name):
+def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_file, control_ld_dir, output_root):
 
     tstart = time.time()
 
     # set up outputs
     logger.info("Starting to LD expand all control snps.")
-    output_dir = os.path.join(output_root, '{}_ld_expand_control_snps'.format(analysis_name))
+    output_dir = os.path.join(output_root, 'ld_expanded_control_and_input_snps')
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj.add_output('ld_expanded_output' ,'ld_expanded_all_control_sets.tsv', add_root=True)
     OutObj.add_output('ld_r2_expanded_output' ,'r2_ld_expanded_all_control_sets.tsv', add_root=True)
@@ -233,7 +213,7 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
     # matched_file='/scratch/abraha1/gsel_/gsel_vec/test/snp_list_output/testlist_matched_snps/matched_snps.tsv'
     # output_root="/scratch/abraha1/gsel_/gsel_vec/test/snp_list_output"
     # control_ld_dir='/scratch/abraha1/gsel_/gsel_vec/test/snp_list_output/testlist_get_ldsnps_for_control_snps/ld_snps_for_control_snps'
-    # analysis_name='test_ex'
+
 
     # %%
     ###
@@ -491,5 +471,5 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
 if __name__ == '__main__':
 
 
-    lead_ld_counts_file, gwas_snps_r2_file, matched_file, control_ld_dir, output_root, analysis_name = parse_input_args()
-    ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_file, control_ld_dir, output_root, analysis_name)
+    lead_ld_counts_file, gwas_snps_r2_file, matched_file, control_ld_dir, output_root = parse_input_args()
+    ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_file, control_ld_dir, output_root)
