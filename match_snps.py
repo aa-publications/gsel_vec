@@ -208,7 +208,7 @@ def write_match_quality(snps_to_match_ordered, matched_snps, n_matches, num_matc
     #       - % number of matching snps found for the subset of input SNPs w/o required number of matched SNPS
 
 
-    match_qual_df = pd.DataFrame({'snps_to_match':snps_to_match_ordered, 'num_uniq_matched':num_matched_found, 'num_match_requested':[n_matches]*len(num_matched_found)})
+    match_qual_df = pd.DataFrame({'lead_snp':snps_to_match_ordered, 'num_uniq_matched':num_matched_found, 'num_match_requested':[n_matches]*len(num_matched_found)})
     match_qual_df['insuff_matches'] = match_qual_df.num_uniq_matched < n_matches
     match_qual_df.to_csv(quality_score_file, sep="\t", index=False)
     print("Wrote match quality per snp to: {}".format(quality_score_file))
@@ -290,7 +290,8 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     reorder_columns = ['snps_to_match']+ agg_df.columns[:-1].tolist()
 
 
-    final_matched_df = agg_df.loc[:, reorder_columns].copy() # reorganize columns
+    final_matched_df = agg_df.loc[:, reorder_columns].copy()  # reorganize columns
+    final_matched_df.rename(columns={'snps_to_match': 'lead_snp'}, inplace=True) # necessary for downstream analysis
     final_matched_df.to_csv(OutObj.get('matched_snps_file'), sep="\t", index=False)
     logger.info("Wrote matched SNPs to: {}".format(OutObj.get('matched_snps_file')))
 

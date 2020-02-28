@@ -101,7 +101,7 @@ def intersect_annotation(anno_label_path_pair, matched_file, output_dir=None, an
     # load annotation and matched snps
     anno_dict = pickle.load(open(anno_file, 'rb'))
     match_df = pd.read_csv(matched_file, sep="\t")
-    print(f"{anno_label} has {len(anno_dict):,} values.")
+    logger.debug(f"{anno_label} has {len(anno_dict):,} values.")
 
     # convert to long df
     # note: 'ld_snp' refers to the gwas snp that is the lead or its ld snp
@@ -255,7 +255,7 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
     intersect_start = time.time()
 
 
-    logger.info(f"Intersection of {len(anno_path_dict)} has begun...")
+    logger.info(f"Intersecting {len(anno_path_dict)} selection measures.")
     anno_label_list, anno_paths = zip(*anno_path_dict.items())
 
     ###

@@ -361,7 +361,7 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
             # input_snp = ordered_lead_snps[0]
 
             # get all control snps and remember the order!
-            csnps_for_isnp = matched_df.loc[matched_df['snps_to_match'] == input_snp, ['Set_{}'.format(x) for x in range(1,n_control_snps+1) ]].values.flatten()
+            csnps_for_isnp = matched_df.loc[matched_df['lead_snp'] == input_snp, ['Set_{}'.format(x) for x in range(1,n_control_snps+1) ]].values.flatten()
 
             uniq_csnps = np.unique(csnps_for_isnp)
             csnps_indices =  dict(zip(uniq_csnps, [np.where(csnps_for_isnp == uniq_csnp)[0].tolist() for uniq_csnp in uniq_csnps]))
