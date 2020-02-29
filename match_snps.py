@@ -242,7 +242,9 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     ###
 
     # load downloaded snpsnap database
-    anno_df = pd.read_pickle(db_file)
+    # anno_df = pd.read_pickle(db_file)
+    anno_df = pd.read_csv(db_file, sep="\t", usecols=['snpID','snp_maf','gene_count','dist_nearest_gene', ld_buddies_r2])
+    
     anno_df['ld_buddies'] = anno_df[ld_buddies_r2] # user select r2 threshold
     smaller_anno_df = anno_df.loc[:, ['snpID','snp_maf','gene_count','dist_nearest_gene','ld_buddies']].copy()
     del anno_df
