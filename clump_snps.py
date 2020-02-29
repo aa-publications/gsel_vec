@@ -28,7 +28,7 @@ import numpy as np
 import pandas as pd
 from subprocess import Popen, PIPE
 
-sys.path.append("/scratch/abraha1/gsel_/gsel_vec")
+
 from helper_calc_r2 import calc_r2_for_input_snps, ld_expand_snp_list #pylint:E0401
 from helper_general import Outputs, error_check_plink_run, warning_check_plink_run
 from helper_clump_snps import write_gwas_snps_by_chr, get_list_of_ld_snps, get_r2_for_lead_ld_snps, bin_ldsnp_per_leadsnp, write_snp_list_by_chr
@@ -213,12 +213,17 @@ def force_input_snp_in_first_col(keep_autosomal_snps, og_store_ld_df):
     store_ld_df = store_ld_df.loc[:, ['SNP_A','SNP_B','snpA_B','snpB_A','R2']]
     return store_ld_df
 
-def clump_snps(gwas_summary_file, output_root, thous_gen_file):
+def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas_pvalue=0.00000005, ld_snps_min_gwas_pvalue=0.00000005, min_r2_to_clump=0.9, min_kb_from_index_to_clump=250):
+    
+    
 
+    
     output_dir = os.path.join(output_root, 'ld_clump_inputs')
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs(OutObj)
 
+
+    # TODO: figure out how to deal with input data...
     # excpected header names for gwas summary statistics file
     gsum_header = {'rsID':"snp",
                     'chr':"chr",
@@ -254,9 +259,8 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file):
         chr_num = this_chr.split('chr')[1]
         outputfile = os.path.join(OutObj.get('plink_clump_output_dir'), this_chr)
 
-
-        plinkcmd = f'plink --bfile {thous_gen_file.format(chr_num)} --clump {thisfile} --clump-p1 0.000001 --clump-p2 0.000001 --out {outputfile}'
-
+    
+        plinkcmd = f'plink --bfile {thous_gen_file.format(chr_num)} --clump {thisfile} --clump-kb {min_kb_from_index_to_clump} --clump-r2 {min_r2_to_clump} --clump-p1 {lead_snp_min_gwas_pvalue} --clump-p2 {ld_snps_min_gwas_pvalue} --out {outputfile}'
         logger.debug(plinkcmd)
 
         # run plink cmd
@@ -334,7 +338,7 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file):
     return OutObj
 
 
-def clump_snp_list(snps_list_file, output_root, thous_gen_file, clump_r2_threshold=0.9):
+def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_clump=0.9):
 
 
     # set up outputs
@@ -411,7 +415,7 @@ def clump_snp_list(snps_list_file, output_root, thous_gen_file, clump_r2_thresho
 
     # write a list of input snps are within the given r2 threshold
     forced_pairwise_r2_df = force_input_snp_in_first_col(keep_autosomal_snps, pairwise_r2_df)
-    non_indep_input_snps_df = pairwise_r2_df.loc[pairwise_r2_df['R2']> clump_r2_threshold].copy()
+    non_indep_input_snps_df = pairwise_r2_df.loc[pairwise_r2_df['R2']> min_r2_to_clump].copy()
 
 
 
@@ -420,7 +424,7 @@ def clump_snp_list(snps_list_file, output_root, thous_gen_file, clump_r2_thresho
     ###
 
     # write input snps and ld snps
-    lead_ld_snp_df = for_ld_binning_df.loc[for_ld_binning_df['R2'] > clump_r2_threshold, ['lead_snp','SNP_B','R2']].copy()
+    lead_ld_snp_df = for_ld_binning_df.loc[for_ld_binning_df['R2'] > min_r2_to_clump, ['lead_snp','SNP_B','R2']].copy()
     lead_ld_snp_df.rename(columns={'SNP_B':'ld_snp'},inplace=True)
     lead_ld_snp_df.R2 = lead_ld_snp_df.R2.round(2)
     lead_ld_snp_df.to_csv(OutObj.get('lead_snp_ld_pairs_r2'), sep="\t", index=False, header=True)
@@ -437,7 +441,7 @@ def clump_snp_list(snps_list_file, output_root, thous_gen_file, clump_r2_thresho
 
     if write_non_indep_df.shape[0] > 0:
         write_non_indep_df.to_csv(OutObj.get('non_indep_snps_file') , sep="\t", index=False, header=True)
-        logger.debug(f"Wrote input snps that are non-indepdent at r2 {clump_r2_threshold} to: {OutObj.get('non_indep_snps_file')}")
+        logger.debug(f"Wrote input snps that are non-indepdent at r2 {min_r2_to_clump} to: {OutObj.get('non_indep_snps_file')}")
 
 
     # write input snps excluded from analysis

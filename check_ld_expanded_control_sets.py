@@ -17,10 +17,8 @@ import matplotlib.pyplot  as plt
 
 DATE = datetime.now().strftime('%Y-%m-%d')
 
-sys.path.append("/scratch/abraha1/gsel_/gsel_pipeline_vec/")
-from ld_expand_all_control_sets import load_ld_df, force_ld_control_snps
 
-sys.path.append("/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline")
+from ld_expand_all_control_sets import load_ld_df, force_ld_control_snps
 from helper_general import Outputs
 
 

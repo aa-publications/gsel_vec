@@ -21,7 +21,7 @@ from glob import glob
 import logging
 logger = logging.getLogger('main.{}'.format(__name__))
 
-sys.path.append("/scratch/abraha1/gsel_/gsel_vec")
+
 from helper_general import Outputs
 
 DATE = datetime.now().strftime('%Y-%m-%d')
