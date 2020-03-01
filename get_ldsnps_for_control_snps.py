@@ -90,7 +90,7 @@ def parse_input_args():
     return csnps_file, thous_gen_file, output_root
 
 
-def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root,  clump_r2_threshold=0.8):
+def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root,  control_snps_ld_expand_r2=0.8):
 
     sstart = time.time()
     logger.info("Starting to find LD snps for control snps.")
@@ -101,6 +101,10 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
     OutputObj = set_up_outputs(OutObj)
 
 
+    ###
+    ###    load and format control snps
+    ###
+    
 
     # load all ld control snps
     snps_df = pd.read_csv(control_snps_file, sep="\t")
@@ -111,7 +115,7 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
     wide_snp_df['chromosome']  = wide_snp_df.Set_.apply(lambda x: int(x.split(":")[0]))
     wide_snp_df.sort_values('Set_', inplace=True)
 
-    # 3) write unique ld control snps to file
+    # write unique ld control snps to file
     for chrm in np.arange(1,23,1):
 
         snps_to_write = wide_snp_df.loc[wide_snp_df['chromosome'] ==chrm, 'Set_' ].unique().tolist()
@@ -122,7 +126,12 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
                     fw.write(ldsnp + "\n")
 
 
-    # 4) run plink r2
+    ###
+    ###    run plink to calc r2
+    ###
+    
+
+    
     for chrm in np.arange(1,23,1):
 
         # skip chromosome if the file does not exists...
@@ -130,7 +139,7 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
             continue
 
         # ld-window-r2  --> minimum r2 requrieed to report in output
-        plinkcmd = f"plink --bfile {thous_gen_file.format(chrm)} --r2 dprime --ld-snp-list {OutputObj.get('ldsnp_list_file').format(chrm)} --ld-window-kb 1000 --ld-window 99999 --ld-window-r2 {clump_r2_threshold} --out {OutputObj.get('plink_output_file').format(chrm)}"
+        plinkcmd = f"plink --bfile {thous_gen_file.format(chrm)} --r2 dprime --ld-snp-list {OutputObj.get('ldsnp_list_file').format(chrm)} --ld-window-kb 1000 --ld-window 99999 --ld-window-r2 {control_snps_ld_expand_r2} --out {OutputObj.get('plink_output_file').format(chrm)}"
 
 
         # 5) start plink cmd

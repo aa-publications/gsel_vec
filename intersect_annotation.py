@@ -223,9 +223,12 @@ def calc_pval_and_summary(values, control_cols):
 
     na_removed_control_values = control_snp_values[~control_snp_values.isnull()]
 
+
+    np.seterr(all='warn')
     if np.isnan(input_snp_value):
         pval=np.nan
     else:
+        
         pval = np.sum(na_removed_control_values > input_snp_value)/len(na_removed_control_values)
 
     num_control_snps = len(na_removed_control_values)

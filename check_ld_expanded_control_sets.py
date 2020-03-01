@@ -259,7 +259,7 @@ def check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead
     ###
 
     # load ld database
-    db = pd.read_csv(db_file, sep="\t", usecols=['snpID','snp_maf','gene_count','dist_nearest_gene', ld_buddies_r2])
+    db = pd.read_csv(snpsnap_db_file, sep="\t", usecols=['snpID','snp_maf','gene_count','dist_nearest_gene', ldbuds_r2_threshold])
     # db = pd.read_pickle(snpsnap_db_file)
 
     # load ld counts and control sets

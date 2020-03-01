@@ -77,10 +77,13 @@ def parse_input_args():
 
 def get_snps_to_match(input_snps_file):
 
-    # getting the list of lead GWAS snps from the plink --clump output file...
-
+    # getting the list of lead GWAS snps from lead and LD SNP pairs. 
+    # should include a row for lead SNPs without ld snps (R2 column should be "NONE")
     df = pd.read_csv(input_snps_file, sep="\t")
-    snps_to_match = df.lead_snp.values.tolist()
+
+    snps_to_match = df.lead_snp.unique().tolist()
+
+
 
     return snps_to_match
 
@@ -197,7 +200,7 @@ def write_excluded_snps(snps_to_match, keep_anno_df, excluded_snps_file):
         for snp in snps_excluded:
             f_ex.write('{}\n'.format(snp))
 
-    return snps_included
+    return snps_included,snps_excluded
 
 
 def write_match_quality(snps_to_match_ordered, matched_snps, n_matches, num_matched_found, quality_score_file,fsummary):
@@ -260,9 +263,11 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     keep_anno_df = smaller_anno_df[~smaller_anno_df.isna().any(1)].copy()
     del smaller_anno_df
 
-    # TODO: check that input lead SNPs w/o any LD SNPs are still selelcted: 2020-02-12 09:43:46
-    snps_to_match= get_snps_to_match(input_snps_file)
-    snps_to_match= write_excluded_snps(snps_to_match, keep_anno_df, OutObj.get('excluded_snps_file'))
+    
+    all_lead_snps= get_snps_to_match(input_snps_file)
+    snps_to_match, snps_excluded= write_excluded_snps(all_lead_snps, keep_anno_df, OutObj.get('excluded_snps_file'))
+
+    
 
     # calculate thresholds for max deviation from properties allowed
     thresholds = set_thresholds(max_dev_maf=0.05, max_dev_gene_count=0.50, max_dev_dist_nearest_gene=0.50, max_dev_friends_ld=0.50)
@@ -295,7 +300,7 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     final_matched_df = agg_df.loc[:, reorder_columns].copy()  # reorganize columns
     final_matched_df.rename(columns={'snps_to_match': 'lead_snp'}, inplace=True) # necessary for downstream analysis
     final_matched_df.to_csv(OutObj.get('matched_snps_file'), sep="\t", index=False)
-    logger.info("Wrote matched SNPs to: {}".format(OutObj.get('matched_snps_file')))
+    logger.debug("Wrote matched SNPs to: {}".format(OutObj.get('matched_snps_file')))
 
 
     ###

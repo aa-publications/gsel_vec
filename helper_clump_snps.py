@@ -65,12 +65,14 @@ def create_r2_dict(r2_file):
     return r2_dict
 
 
-def bin_ldsnp_per_leadsnp(r2_df):
+def bin_ldsnp_per_leadsnp(og_lead_ld_r2_df):
     ''' for each lead snp, find each snp in LD with it; calculate its r2 and then bin the pair by LD'''
 
     # -------
     # SET UP LD BINS
     # -------
+    lead_ld_r2_df = og_lead_ld_r2_df.copy()
+    lead_ld_r2_df.reset_index(inplace=True, drop=True)
     r2_bins = np.arange(11)/10
 
     # need to add one so that lenght of r2_bins can
@@ -88,19 +90,20 @@ def bin_ldsnp_per_leadsnp(r2_df):
     # -------
     # FOR EACH LEAD SNP, BIN LD PARTNERS
     # -------
+    
+    
     # seperate lead snps w/o any LD partners
-    r2_df.R2 = r2_df.R2.astype('object')  # coerce to make NONE comparison
-
-    snps_without_ldbuddies = r2_df.loc[r2_df['R2'] == 'NONE', 'lead_snp'].values
-    r2_df.drop(r2_df.loc[r2_df['R2'] == 'NONE', 'lead_snp'].index, inplace=True)
+    lead_ld_r2_df.R2 = lead_ld_r2_df.R2.astype('object')  # coerce to make NONE comparison
+    snps_without_ldbuddies = lead_ld_r2_df.loc[lead_ld_r2_df['R2'] == 'NONE', 'lead_snp'].values
+    lead_ld_r2_df.drop(lead_ld_r2_df.loc[lead_ld_r2_df['R2'] == 'NONE', 'lead_snp'].index, inplace=True)
 
     # check if there is at least one lead snp
     # with ld partners to sort into LD BINS
-    if r2_df.shape[0] != 0:
-        r2_df.R2 = pd.to_numeric(r2_df.R2)
+    if lead_ld_r2_df.shape[0] != 0:
+        lead_ld_r2_df.R2 = pd.to_numeric(lead_ld_r2_df.R2)
 
         # sort ld parterners and count number in each bin
-        count_df = r2_df.groupby('lead_snp').R2.apply(lambda x: np.bincount(
+        count_df = lead_ld_r2_df.groupby('lead_snp').R2.apply(lambda x: np.bincount(
             np.digitize(x, r2_bins, right=True), minlength=num_slots_for_digitize_results))
 
         rsID_index_labels = count_df.index
@@ -114,6 +117,8 @@ def bin_ldsnp_per_leadsnp(r2_df):
 
     # add snps without any ld buddies to the final dataframe
     final_count_df = final_count_df.append(no_ld_buds)
+
+    
 
     return final_count_df
 
@@ -157,9 +162,13 @@ def lead_snp_rsID_to_coord(concatenated_clumped_output_df):
     return rsID_coord_dict
 
 
-def get_r2_for_lead_ld_snps(lead_ld_df, r2_df):
+def get_r2_for_lead_ld_snps(og_lead_ld_df, r2_df):
+    """ return a df with lead and and ld snp and R2. lead snps w/o any SNPs in r2_df is included as "NONE for ld snps adn R2 """
+    lead_ld_df = og_lead_ld_df.copy()
     lead_ld_df.reset_index(inplace=True, drop=True)
 
+
+    
     # seperate the SNPS w/o and LD SNPS
     no_ld_lead_df = lead_ld_df[lead_ld_df['ld_snp'] == "NONE"].copy()
     no_ld_lead_df['R2'] = "NONE"
@@ -169,27 +178,32 @@ def get_r2_for_lead_ld_snps(lead_ld_df, r2_df):
     lead_ld_df['lead_ld_pair'] = lead_ld_df['lead_snp'] + "_" + lead_ld_df['ld_snp']
     temp_m1 = pd.merge(lead_ld_df, r2_df.loc[:,['snpA_B','R2']], left_on='lead_ld_pair', right_on="snpA_B", how='inner')
     temp_m2 = pd.merge(lead_ld_df, r2_df.loc[:,['snpB_A','R2']], left_on='lead_ld_pair', right_on="snpB_A", how='inner')
-    merged_df = pd.concat([temp_m1.drop(['snpA_B'], axis=1),
-                           temp_m2.drop(['snpB_A'], axis=1)], axis=0)
+    merged_df = pd.concat([temp_m1.drop(['snpA_B'], axis=1),temp_m2.drop(['snpB_A'], axis=1)], axis=0)
 
 
 
     # add any snps in lead_ld_df that were not present in the r2_df
+    #           >>> NOTE: a lead snp may have snps in LD based on the clumping parameters, but may not have any snps in the r2_df because that is determined by the ld_expand parameter...
     snps_wo_r2 = [x for x in set(lead_ld_df.lead_snp.unique()) -  set(merged_df.lead_snp.unique())]
     snps_wo_r2_df = pd.DataFrame( {'lead_snp':snps_wo_r2, 'ld_snp':['NONE']*len(snps_wo_r2), 'R2':['NONE']*len(snps_wo_r2)})
     no_ld_lead_df = no_ld_lead_df.append(snps_wo_r2_df)
 
 
-    full_df = pd.concat([merged_df.drop('lead_ld_pair', axis=1),
-                no_ld_lead_df], axis=0)
+    full_df = pd.concat([merged_df.drop('lead_ld_pair', axis=1), no_ld_lead_df], axis=0)
+    
+    assert set(full_df.lead_snp.unique()) == set(og_lead_ld_df.lead_snp.unique()), 'number of lead snps started with is not equal to the number finished after merging with r2_df'
 
     return full_df
 
 
-def write_gwas_snps_by_chr(gwas_df, gwas_stats_by_chr_dir, gwas_stats_by_chr_snps_only_dir, chromosome_column, basepair_column, gwasfilename, pvalue_column):
+# def write_gwas_snps_by_chr(gwas_df, gwas_stats_by_chr_dir, gwas_stats_by_chr_snps_only_dir, chromosome_column, basepair_column, gwasfilename, pvalue_column):
+def write_gwas_sumstats_by_chr(gwas_df, gwas_stats_by_chr_dir, gwas_stats_by_chr_snps_only_dir, chromosome_column, basepair_column, gwasfilename, pvalue_column):
 
     gwas_df['variantID'] = gwas_df.loc[:, chromosome_column].map(str) + ":" + gwas_df.loc[:, basepair_column].map(str)
 
+
+    gwas_stats_by_chr_files_dict = dict()
+    gwas_snps_by_chr_files_dict = dict()
     for this_chr in gwas_df.loc[:, chromosome_column].unique():
 
         if (int(this_chr) == 23):
@@ -199,12 +213,13 @@ def write_gwas_snps_by_chr(gwas_df, gwas_stats_by_chr_dir, gwas_stats_by_chr_snp
         snps_only_file = os.path.join(gwas_stats_by_chr_snps_only_dir, f"chr{this_chr}_{gwasfilename}")
 
         # write to SNP and P value to file
-        gwas_df.loc[gwas_df[chromosome_column] == this_chr, ["variantID", pvalue_column]].to_csv(
-            output_file, sep="\t", index=False, header=["SNP", "P"])
+        gwas_df.loc[gwas_df[chromosome_column] == this_chr, ["variantID", pvalue_column]].to_csv(output_file, sep="\t", index=False, header=["SNP", "P"])
+        gwas_stats_by_chr_files_dict[this_chr] = output_file
 
         # write to SNP(chr:BP) to file
         gwas_df.loc[gwas_df[chromosome_column] == this_chr, ["variantID"]].to_csv(snps_only_file, sep="\t", index=False, header=None)
-
+        gwas_snps_by_chr_files_dict[this_chr] = snps_only_file
+    return gwas_stats_by_chr_files_dict, gwas_snps_by_chr_files_dict
 
 def write_snp_list_by_chr(snp_list,  snps_by_chr_snps_only_dir):
     """ split input snp list by chromosome into different text files"""
@@ -214,11 +229,11 @@ def write_snp_list_by_chr(snp_list,  snps_by_chr_snps_only_dir):
     snps_df.sort_values('chr',inplace=True)
 
 
-    files_written = {}
+    snps_by_chr_files_dict = dict()
     for this_chr in snps_df.loc[:, 'chr'].unique():
 
         snps_only_file = os.path.join(snps_by_chr_snps_only_dir, "chr{}_from_snplist.txt")
         snps_df.loc[snps_df['chr'] == this_chr, 'chr_pos'].to_csv(snps_only_file.format(this_chr), sep="\t", index=False, header=False)
-        files_written[this_chr] =snps_only_file.format(this_chr)
+        snps_by_chr_files_dict[this_chr] =snps_only_file.format(this_chr)
 
-    return files_written
+    return snps_by_chr_files_dict
