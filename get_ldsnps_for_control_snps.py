@@ -104,7 +104,7 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
     ###
     ###    load and format control snps
     ###
-    
+
 
     # load all ld control snps
     snps_df = pd.read_csv(control_snps_file, sep="\t")
@@ -129,9 +129,9 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
     ###
     ###    run plink to calc r2
     ###
-    
 
-    
+
+
     for chrm in np.arange(1,23,1):
 
         # skip chromosome if the file does not exists...

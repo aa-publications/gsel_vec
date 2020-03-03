@@ -19,8 +19,10 @@ from datetime import datetime
 
 
 from functools import partial
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool, cpu_count, current_process
 from helper_general import Outputs
+
+
 
 import logging
 logger = logging.getLogger('main.{}'.format(__name__))
@@ -152,9 +154,9 @@ def get_thresholds(index_maf,  intervals_maf, index_gene_count, intervals_percen
 
 
 def get_matched_snps(snp_to_match, n_matches, anno_df, thresholds):
-
+    start = time.time()
     index_maf, index_gene_count, index_dist_nearest_gene, index_friends_ld = get_properties_of_index_snp(snp_to_match, anno_df)
-
+    
 
     for attempt in range(5):
 
@@ -178,7 +180,10 @@ def get_matched_snps(snp_to_match, n_matches, anno_df, thresholds):
         elif (attempt == 4):
             matched_snps = matched_df.sample(n_matches, replace=True, random_state=12).loc[:, 'snpID'].values.tolist()
             num_matched_snps = matched_df.shape[0]
-
+    
+    
+    print("matching snp {}  on {} and took {:.2f} minutes.".format( snp_to_match, current_process(), (time.time() - start)/60  ))
+    
     return snp_to_match, matched_snps, num_matched_snps
 
 

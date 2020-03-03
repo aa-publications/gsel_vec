@@ -90,8 +90,8 @@ def bin_ldsnp_per_leadsnp(og_lead_ld_r2_df):
     # -------
     # FOR EACH LEAD SNP, BIN LD PARTNERS
     # -------
-    
-    
+
+
     # seperate lead snps w/o any LD partners
     lead_ld_r2_df.R2 = lead_ld_r2_df.R2.astype('object')  # coerce to make NONE comparison
     snps_without_ldbuddies = lead_ld_r2_df.loc[lead_ld_r2_df['R2'] == 'NONE', 'lead_snp'].values
@@ -118,7 +118,7 @@ def bin_ldsnp_per_leadsnp(og_lead_ld_r2_df):
     # add snps without any ld buddies to the final dataframe
     final_count_df = final_count_df.append(no_ld_buds)
 
-    
+
 
     return final_count_df
 
@@ -168,7 +168,6 @@ def get_r2_for_lead_ld_snps(og_lead_ld_df, r2_df):
     lead_ld_df.reset_index(inplace=True, drop=True)
 
 
-    
     # seperate the SNPS w/o and LD SNPS
     no_ld_lead_df = lead_ld_df[lead_ld_df['ld_snp'] == "NONE"].copy()
     no_ld_lead_df['R2'] = "NONE"
@@ -180,7 +179,8 @@ def get_r2_for_lead_ld_snps(og_lead_ld_df, r2_df):
     temp_m2 = pd.merge(lead_ld_df, r2_df.loc[:,['snpB_A','R2']], left_on='lead_ld_pair', right_on="snpB_A", how='inner')
     merged_df = pd.concat([temp_m1.drop(['snpA_B'], axis=1),temp_m2.drop(['snpB_A'], axis=1)], axis=0)
 
-
+    # round the R2 to save memeory...
+    merged_df.R2 = merged_df.R2.round(2)
 
     # add any snps in lead_ld_df that were not present in the r2_df
     #           >>> NOTE: a lead snp may have snps in LD based on the clumping parameters, but may not have any snps in the r2_df because that is determined by the ld_expand parameter...
@@ -190,7 +190,7 @@ def get_r2_for_lead_ld_snps(og_lead_ld_df, r2_df):
 
 
     full_df = pd.concat([merged_df.drop('lead_ld_pair', axis=1), no_ld_lead_df], axis=0)
-    
+
     assert set(full_df.lead_snp.unique()) == set(og_lead_ld_df.lead_snp.unique()), 'number of lead snps started with is not equal to the number finished after merging with r2_df'
 
     return full_df

@@ -137,7 +137,7 @@ def set_up_outputs(OutputObj):
     OutputObj.add_output('gstats_r2_dir', "pairwise_r2_between_gwas_snps", mkdir=True, add_root=True)
     OutputObj.add_output('lead_snps_pos_by_chr_dir', "lead_snps_pos_by_chr_dir", mkdir=True, add_root=True)
     # set up ouput files
-    
+
     OutputObj.add_output('reprint_gwas_file', "input_gwas_file.tsv", add_root=True)
     OutputObj.add_output('missing_snps_file', "input_gwas_snps_not_found.txt", add_root=True)
     OutputObj.add_output('lead_snps_file', "lead_gwas_snps.tsv", add_root=True)
@@ -215,10 +215,10 @@ def force_input_snp_in_first_col(keep_autosomal_snps, og_store_ld_df):
     return store_ld_df
 
 def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas_pvalue=0.00000005, ld_snps_min_gwas_pvalue=0.00000005, min_r2_to_clump=0.9, min_kb_from_index_to_clump=250, ld_expand_lead_snp_min_r2=0.7):
-    
-    
 
-    
+
+
+
     output_dir = os.path.join(output_root, 'ld_clump_inputs')
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs(OutObj)
@@ -241,7 +241,7 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas
 
 
     gwas_df = pd.read_csv(gwas_summary_file, sep="\t")
-    
+
     gwas_df.to_csv(OutObj.get('reprint_gwas_file'), sep="\t", index=False)  # write a copy of the input data
     logger.info(f"Loaded GWAS summary stats with {gwas_df.shape[0]} rows.")
 
@@ -268,7 +268,7 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas
         # chr_num = this_chr.split('chr')[1]
         outputfile = os.path.join(OutObj.get('plink_clump_output_dir'), "chr{}".format(chr_num))
 
-    
+
         plinkcmd = f'plink --bfile {thous_gen_file.format(chr_num)} --clump {thisfile} --clump-kb {min_kb_from_index_to_clump} --clump-r2 {min_r2_to_clump} --clump-p1 {lead_snp_min_gwas_pvalue} --clump-p2 {ld_snps_min_gwas_pvalue} --out {outputfile}'
         logger.debug(plinkcmd)
 
@@ -303,53 +303,57 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas
     ## calc r2 between gwas lead and LD SNPs
     ##
 
-    
+
     logger.info("Calculating pairwise r2 for lead and LD gwas variants based on clumping parameters.")
 
-    
+
     # load all lead_snp and ld_snp pairs
     lead_ld_df = pd.DataFrame()
     lead_snps_per_chr_files_dict=dict()
-    for chrom_num in np.arange(1,23): 
-        
+    for chrom_num in np.arange(1,23):
+
         clumped_file = os.path.join(OutObj.get("plink_clump_output_dir"), 'chr{}.clumped'.format(chrom_num))
-        
-        if os.path.isfile(clumped_file): 
-            
+
+        if os.path.isfile(clumped_file):
+
             # get all LD snps with lead SNPs (the ld snps are determined by clumping parameters specficied earlier..)
-            # lead snps w/o LD snps will be included 
+            # lead snps w/o LD snps will be included
             temp_df  = pd.DataFrame(get_list_of_ld_snps(clumped_file), columns=['lead_snp','ld_snp'])
             lead_ld_df = lead_ld_df.append(temp_df)
-        
 
 
-            # write lead snps per chromsome 
+
+            # write lead snps per chromsome
             pos_out_file = os.path.join(OutObj.get('lead_snps_pos_by_chr_dir'), os.path.basename(clumped_file).split(".clumped")[0]+".lead_snps")
             lead_snps_per_chr_files_dict[chrom_num] = pos_out_file
-        
+
             lead_snps_to_write = temp_df.lead_snp.unique()
-            with open(pos_out_file,'w') as fw: 
+            with open(pos_out_file,'w') as fw:
                 for lead_snp_to_write in lead_snps_to_write:
                     fw.writelines(lead_snp_to_write+"\n")
-            
-    
-    # check if there are no LD snps ... 
-    if lead_ld_df.shape[0] == 0: 
-        sys.exit("No lead snps found in data set...")
-        
 
-    # for lead snps, LD expand them 
+
+    # check if there are no LD snps ...
+    if lead_ld_df.shape[0] == 0:
+        sys.exit("No lead snps found in data set...")
+
+
+    # for lead snps, LD expand them
     # note: if lead SNP doesn't have any LD snps at specified r2, then it will not be reported in plink's outputs ( take care of this downstream in the pipeline)
     # note: min_r2_threshold is the r2 to which the lead snp should be expanded to (this just has tobe a lower or equal r2 threshold than what will be used to ld expand the control snps)
     r2_df = calc_r2_for_input_snps(lead_snps_per_chr_files_dict, gwas_snps_by_chr_files_dict,  OutObj.get('gstats_r2_dir'), thous_gen_file, min_r2_threshold=ld_expand_lead_snp_min_r2)
-    
 
-    
+
+
+    ###
+    ###    bin ld snps by LD deciles
+    ###
 
 
     # get r2 for all lead and ld snp pairs
     #   note: lead snps w/o any LD snps in r2_df will also have a row with NONE as a placeholder
-    
+
+
     store_lead_snp_ld_df = get_r2_for_lead_ld_snps(lead_ld_df, r2_df)
     store_ld_bins_df = bin_ldsnp_per_leadsnp(store_lead_snp_ld_df)
     store_ld_bins_df.reset_index(drop=False, inplace=True)
@@ -381,7 +385,7 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas
     return OutObj
 
 
-# def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_clump=0.9):
+
 def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_ld_exp_lead_snp=0.9, min_r2_for_input_snp_indep=0.9):
 
 
@@ -441,10 +445,9 @@ def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_ld_exp
     keep_autosomal_snps = set(keep_autosomal_snps).difference(set(store_miss_variants))
 
 
-    # force input snp in SNP_A and bin, makes sure that each snp in keep_autosomal_snps have at least one row 
+    # force input snp in SNP_A and bin, makes sure that each snp in keep_autosomal_snps have at least one row
     for_ld_binning_df = force_input_snp_in_first_col(keep_autosomal_snps, store_ld_df)
     for_ld_binning_df.rename(columns={'SNP_A':'lead_snp'}, inplace=True)
-    for_ld_binning_df.R2 = for_ld_binning_df.R2.round(2)
     store_ld_bins_df  = bin_ldsnp_per_leadsnp(for_ld_binning_df)
     store_ld_bins_df.reset_index(drop=False, inplace=True)
     store_ld_bins_df.rename(columns={'index':'lead_snp'}, inplace=True)
@@ -454,7 +457,7 @@ def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_ld_exp
     ###    calculate ld between input snps and check for ld independence
     ###
 
-    
+
     pairwise_r2_df = calc_r2_among_snps_in_snp_list(snp_list_by_chr_files_dict, OutObj.get('pairwise_r2_of_input_snps'), thous_gen_file, min_r2_threshold=min_r2_for_input_snp_indep)
 
     # write a list of input snps are within the given r2 threshold
@@ -468,10 +471,18 @@ def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_ld_exp
     ###
 
     # write input snps and ld snps
-    lead_ld_snp_df = for_ld_binning_df.loc[for_ld_binning_df['R2'] > min_r2_to_ld_exp_lead_snp, ['lead_snp','SNP_B','R2']].copy()
-    lead_ld_snp_df.rename(columns={'SNP_B':'ld_snp'},inplace=True)
-    lead_ld_snp_df.R2 = lead_ld_snp_df.R2.round(2)
-    lead_ld_snp_df.to_csv(OutObj.get('lead_snp_ld_pairs_r2'), sep="\t", index=False, header=True)
+    #   - seperate lead snps with and without ≥1 ld snp
+    lead_snp_w_no_ld_snps_df = for_ld_binning_df.loc[for_ld_binning_df['SNP_B']=="NONE"].copy()
+    lead_snp_w_ld_snps_df = for_ld_binning_df.loc[for_ld_binning_df['SNP_B']!="NONE"].copy()
+
+    # filter on r2 adn then concat back lead snps w/o LD snps
+    lead_and_ld_snp_df = lead_snp_w_ld_snps_df.loc[lead_snp_w_ld_snps_df['R2'] > min_r2_to_ld_exp_lead_snp, ['lead_snp','SNP_B','R2']].copy()
+    lead_and_no_ld_snp_df = lead_snp_w_no_ld_snps_df.loc[:, ['lead_snp','SNP_B','R2']].copy()
+    all_lead_ld_snp_df = pd.concat([lead_and_ld_snp_df, lead_and_no_ld_snp_df],axis=0)
+
+    # write
+    all_lead_ld_snp_df.rename(columns={'SNP_B':'ld_snp'},inplace=True)
+    all_lead_ld_snp_df.to_csv(OutObj.get('lead_snp_ld_pairs_r2'), sep="\t", index=False, header=True)
     logger.debug(f"Wrote input and ld snp to: {OutObj.get('lead_snp_ld_pairs_r2')}")
 
 
