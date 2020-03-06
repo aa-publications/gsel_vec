@@ -14,7 +14,8 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 import logging
-
+import psutil
+import math
 
 DATE = datetime.now().strftime('%Y-%m-%d')
 
@@ -76,6 +77,7 @@ class Outputs:
             full_path = output_path
 
         self.paths[output] = full_path
+
 
         if mkdir:
             try:
@@ -205,3 +207,20 @@ def start_logger(log_file):
     return logger
 
 
+def convert_size(size_bytes):
+   if size_bytes == 0:
+       return "0B"
+   size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+   i = int(math.floor(math.log(size_bytes, 1024)))
+   p = math.pow(1024, i)
+   s = round(size_bytes / p, 2)
+   return "%s %s" % (s, size_name[i])
+#
+def report_mem():
+    pid=os.getpid()
+    process = psutil.Process(pid)
+
+    rss = convert_size(np.round(process.memory_info().rss))
+    # uss = convert_size(np.round(process.memory_info().uss))   
+
+    return f"PID:{pid} using {rss} rss"

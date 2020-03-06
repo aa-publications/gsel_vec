@@ -161,8 +161,8 @@ def set_up_outputs_for_snp_list(OutObj):
 
     OutObj.add_output('pairwise_r2_of_input_snps', "pairwise_r2_of_input_snps", add_root=True, mkdir=True)
     OutObj.add_output('bin_by_ld_file', "input_snps_with_binned_ldsnps_counts.tsv", add_root=True)
-    OutObj.add_output('lead_snp_ld_pairs_r2', "input_and_ld_snps.tsv", add_root=True)
-    OutObj.add_output('non_indep_snps_file', "non_indep_snps.tsv", add_root=True)
+    OutObj.add_output('lead_snp_ld_pairs_r2', "input_and_ld_snps_r2.tsv", add_root=True)
+    OutObj.add_output('non_indep_snps_file', "non_indep_input_snps.tsv", add_root=True)
 
     # set up ouput files
     OutObj.add_output('missing_snps_file', "input_snps_not_in_1kg_excluded.txt", add_root=True)
@@ -180,9 +180,10 @@ def force_input_snp_in_first_col(keep_autosomal_snps, og_store_ld_df):
     input_autosomal_snps_in_SNP_B = set(keep_autosomal_snps).difference(set(store_ld_df.SNP_B.unique())).difference(remaining_autosomal_snps_in_SNP_A) # remove any snps found in SNP_A column already
 
 
+    #if  input snps that are not in SNP_A
     if len(remaining_autosomal_snps_in_SNP_A) != 0:
 
-        # chceck if any missing input snps from SNP_A are in SNP_B column
+        # check if any missing input snps from SNP_A are in SNP_B column
         remaining_input_snps_in_snp_b = set(remaining_autosomal_snps_in_SNP_A).difference(set(store_ld_df.SNP_B.unique()))
 
         if len(remaining_input_snps_in_snp_b) > 0:
@@ -388,7 +389,7 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas
 
 def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_ld_exp_lead_snp=0.9, min_r2_for_input_snp_indep=0.9):
 
-
+    ostart = time.time()
     # set up outputs
     output_dir = os.path.join(output_root, 'ld_clump_inputs')
     OutObj = Outputs(output_dir, overwrite=True)
@@ -400,18 +401,22 @@ def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_ld_exp
     ###    load list of snp and check input format
     ###
 
-    # laod input snps
+    # load input snps
     with open(snps_list_file, 'r') as fo:
         snp_file_contents = fo.read().splitlines()
 
     logger.info(f"Loaded {len(snp_file_contents):,} snps for analysis.")
+
+
     # ensure input snps follow the following format chr:pos
     assert np.all([ True if re.match(r"[1-9][0-9]*:[0-9]+", str(snp)) else False for snp in snp_file_contents ]), "check input snps are in formatted correctly (2:22222, chr:pos, without any prefix for chromosome)"
 
     # keep only autosomal snps
     keep_autosomal_snps = [snp  for snp in snp_file_contents if (int(snp.split(":")[0]) < 23)]
     non_auto_snps_removed = set(snp_file_contents).difference(set(keep_autosomal_snps))
-    logger.info(f"Removed {len(non_auto_snps_removed)} snps for not being autosomal snps.")
+
+    if len(non_auto_snps_removed)>0:
+        logger.info(f"Removed {len(non_auto_snps_removed)} snps for not being autosomal snps.")
 
 
     if len(keep_autosomal_snps) == 0:
@@ -441,8 +446,17 @@ def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_ld_exp
     ###    bin snps by ld
     ###
 
+
     # remove snps that were not found in 1kg database (so that these SNPs don't get filled in as having no SNP in LD with it downstream)
     keep_autosomal_snps = set(keep_autosomal_snps).difference(set(store_miss_variants))
+
+    if len(keep_autosomal_snps) == 0:
+        sys.exit("Error, script terminated because no autosomal snps left in the input snp list.")
+    else:
+        logger.info(f"{len(keep_autosomal_snps):,} input snps remains after intersecting with thousand Genomes PhaseIII.")
+
+    # remove rows where SNP_A == SNP_B and R2 ==1
+    store_ld_df.drop(store_ld_df[(store_ld_df['SNP_A'] == store_ld_df['SNP_B']) & (store_ld_df['R2'] == 1)].index, axis=0, inplace=True)
 
 
     # force input snp in SNP_A and bin, makes sure that each snp in keep_autosomal_snps have at least one row
@@ -456,14 +470,17 @@ def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_ld_exp
     ###
     ###    calculate ld between input snps and check for ld independence
     ###
-
-
+    r2start = time.time()
     pairwise_r2_df = calc_r2_among_snps_in_snp_list(snp_list_by_chr_files_dict, OutObj.get('pairwise_r2_of_input_snps'), thous_gen_file, min_r2_threshold=min_r2_for_input_snp_indep)
+    logger.info(f"Done calculating r2 between input snps. Took {(time.time()-r2start)/60:.2f} minutes.")
 
     # write a list of input snps are within the given r2 threshold
-    forced_pairwise_r2_df = force_input_snp_in_first_col(keep_autosomal_snps, pairwise_r2_df)
-    non_indep_input_snps_df = pairwise_r2_df.loc[pairwise_r2_df['R2']> min_r2_for_input_snp_indep].copy()
-
+    if (pairwise_r2_df.shape[0] > 0):
+        forced_pairwise_r2_df = force_input_snp_in_first_col(keep_autosomal_snps, pairwise_r2_df)
+        non_indep_input_snps_df = pairwise_r2_df.loc[pairwise_r2_df['R2']> min_r2_for_input_snp_indep].copy()
+        write_non_indep_df = non_indep_input_snps_df.loc[non_indep_input_snps_df['SNP_A'].isin(keep_autosomal_snps)].copy()
+        write_non_indep_df.to_csv(OutObj.get('non_indep_snps_file') , sep="\t", index=False, header=True)
+        logger.debug(f"Wrote input snps that are non-indepdent at r2 > {min_r2_for_input_snp_indep} to: {OutObj.get('non_indep_snps_file')}")
 
 
     ###
@@ -491,18 +508,12 @@ def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_ld_exp
     logger.debug(f"Wrote table of number of LD snps (binned): {OutObj.get('bin_by_ld_file')}")
 
 
-    # write non_indep snps
-    write_non_indep_df = non_indep_input_snps_df.loc[non_indep_input_snps_df['SNP_A'].isin(keep_autosomal_snps)].copy()
-
-    if write_non_indep_df.shape[0] > 0:
-        write_non_indep_df.to_csv(OutObj.get('non_indep_snps_file') , sep="\t", index=False, header=True)
-        logger.debug(f"Wrote input snps that are non-indepdent at r2 > {min_r2_for_input_snp_indep} to: {OutObj.get('non_indep_snps_file')}")
-
-
     # write input snps excluded from analysis
     if store_miss_variants:
         with open(OutObj.get('missing_snps_file'), 'w') as fo:
             fo.write('\n'.join(store_miss_variants))
+
+    logger.info(f"Done clumping input snps. Took {(time.time()-ostart)/60:.2f} minutes.")
 
     return OutObj
 

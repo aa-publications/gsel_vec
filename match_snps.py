@@ -20,7 +20,7 @@ from datetime import datetime
 
 from functools import partial
 from multiprocessing import Pool, cpu_count, current_process
-from helper_general import Outputs
+from helper_general import Outputs, report_mem
 
 
 
@@ -79,7 +79,7 @@ def parse_input_args():
 
 def get_snps_to_match(input_snps_file):
 
-    # getting the list of lead GWAS snps from lead and LD SNP pairs. 
+    # getting the list of lead GWAS snps from lead and LD SNP pairs.
     # should include a row for lead SNPs without ld snps (R2 column should be "NONE")
     df = pd.read_csv(input_snps_file, sep="\t")
 
@@ -156,34 +156,43 @@ def get_thresholds(index_maf,  intervals_maf, index_gene_count, intervals_percen
 def get_matched_snps(snp_to_match, n_matches, anno_df, thresholds):
     start = time.time()
     index_maf, index_gene_count, index_dist_nearest_gene, index_friends_ld = get_properties_of_index_snp(snp_to_match, anno_df)
-    
 
-    for attempt in range(5):
+    try:
 
-        # get interval thresholds
-        intervals_maf, intervals_percent_gene_count, intervals_percent_dist_nearest_gene, intervals_percent_friends_ld = thresholds
+        logger.info(f"on {snp_to_match}." + report_mem())
+        for attempt in range(5):
 
-
-        # get thresholds to match on
-        maf_thresh, gene_count_thresh, dist_nearest_gene_thresh, friends_ld_thresh = get_thresholds(index_maf,  intervals_maf, index_gene_count, intervals_percent_gene_count,  index_dist_nearest_gene, intervals_percent_dist_nearest_gene, index_friends_ld, intervals_percent_friends_ld, attempt)
-
-        # get all snps in database (excluding snp of interest matching these criteria)
-        matched_df = anno_df.query('snp_maf >= @maf_thresh[0] and  snp_maf <= @maf_thresh[1] and gene_count >= @gene_count_thresh[0] and gene_count <= @gene_count_thresh[1] and dist_nearest_gene >= @dist_nearest_gene_thresh[0] and dist_nearest_gene <= @dist_nearest_gene_thresh[1] and ld_buddies >= @friends_ld_thresh[0] and ld_buddies <= @friends_ld_thresh[1] and snpID != @snp_to_match')
+            # get interval thresholds
+            intervals_maf, intervals_percent_gene_count, intervals_percent_dist_nearest_gene, intervals_percent_friends_ld = thresholds
 
 
-        # randomly sample snps meeting criteria
-        if (matched_df.shape[0] >= n_matches):
-            matched_snps = matched_df.sample(n_matches, replace=False, random_state=12).loc[:, 'snpID'].values.tolist()
-            num_matched_snps = matched_df.shape[0]
-            break
+            # get thresholds to match on
+            maf_thresh, gene_count_thresh, dist_nearest_gene_thresh, friends_ld_thresh = get_thresholds(index_maf,  intervals_maf, index_gene_count, intervals_percent_gene_count,  index_dist_nearest_gene, intervals_percent_dist_nearest_gene, index_friends_ld, intervals_percent_friends_ld, attempt)
 
-        elif (attempt == 4):
-            matched_snps = matched_df.sample(n_matches, replace=True, random_state=12).loc[:, 'snpID'].values.tolist()
-            num_matched_snps = matched_df.shape[0]
-    
-    
-    print("matching snp {}  on {} and took {:.2f} minutes.".format( snp_to_match, current_process(), (time.time() - start)/60  ))
-    
+            # get all snps in database (excluding snp of interest matching these criteria)
+            matched_df = anno_df.query('snp_maf >= @maf_thresh[0] and  snp_maf <= @maf_thresh[1] and gene_count >= @gene_count_thresh[0] and gene_count <= @gene_count_thresh[1] and dist_nearest_gene >= @dist_nearest_gene_thresh[0] and dist_nearest_gene <= @dist_nearest_gene_thresh[1] and ld_buddies >= @friends_ld_thresh[0] and ld_buddies <= @friends_ld_thresh[1] and snpID != @snp_to_match')
+
+            # IF THERE ARE NO MATCHES ...
+            if (matched_df.shape[0] == 0):
+                matched_snps = ["None"]*n_matches
+                num_matched_snps =0
+                return snp_to_match, matched_snps, num_matched_snps
+
+            # randomly sample snps meeting criteria
+            if (matched_df.shape[0] >= n_matches):
+                matched_snps = matched_df.sample(n_matches, replace=False, random_state=12).loc[:, 'snpID'].values.tolist()
+                num_matched_snps = matched_df.shape[0]
+                break
+
+            elif (attempt == 4):
+                matched_snps = matched_df.sample(n_matches, replace=True, random_state=12).loc[:, 'snpID'].values.tolist()
+                num_matched_snps = matched_df.shape[0]
+
+    except ValueError as e:
+            print(f"Value Errors in get_matched_snps while on {snp_to_match}")
+
+    logger.info("matching snp {}  on {} and took {:.2f} minutes.".format( snp_to_match, current_process(), (time.time() - start)/60  ))
+
     return snp_to_match, matched_snps, num_matched_snps
 
 
@@ -252,7 +261,7 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     # load downloaded snpsnap database
     # anno_df = pd.read_pickle(db_file)
     anno_df = pd.read_csv(db_file, sep="\t", usecols=['snpID','snp_maf','gene_count','dist_nearest_gene', ld_buddies_r2])
-    
+
     anno_df['ld_buddies'] = anno_df[ld_buddies_r2] # user select r2 threshold
     smaller_anno_df = anno_df.loc[:, ['snpID','snp_maf','gene_count','dist_nearest_gene','ld_buddies']].copy()
     del anno_df
@@ -268,11 +277,11 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     keep_anno_df = smaller_anno_df[~smaller_anno_df.isna().any(1)].copy()
     del smaller_anno_df
 
-    
+
     all_lead_snps= get_snps_to_match(input_snps_file)
     snps_to_match, snps_excluded= write_excluded_snps(all_lead_snps, keep_anno_df, OutObj.get('excluded_snps_file'))
 
-    
+
 
     # calculate thresholds for max deviation from properties allowed
     thresholds = set_thresholds(max_dev_maf=0.05, max_dev_gene_count=0.50, max_dev_dist_nearest_gene=0.50, max_dev_friends_ld=0.50)
@@ -287,7 +296,7 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     mstart = time.time()
     logger.info("Generating {:,} control sets for each lead snp using {:,} cores.".format(n_matches, num_threads-1))
 
-    pool = Pool(num_threads-1)
+    pool = Pool(processes=4, maxtasksperchild=10)
     partial_get_matched_snps = partial(get_matched_snps, n_matches=n_matches, anno_df=keep_anno_df, thresholds=thresholds)
     matched_snps_list = pool.map(partial_get_matched_snps, snps_to_match)
 
@@ -297,12 +306,20 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
 
     # consolidate results
     snps_to_match_ordered, matched_snps, num_matched_found = zip(*matched_snps_list)
-    agg_df = pd.DataFrame(np.vstack(matched_snps), columns=['Set_{}'.format(x+1) for x in range(n_matches)]) # ADD 1 to start counting control sets at 1 instead of zero
+    column_names = ['Set_{}'.format(x+1) for x in range(n_matches)]
+    agg_df = pd.DataFrame(np.vstack(matched_snps), columns=column_names) # ADD 1 to start counting control sets at 1 instead of zero
     agg_df['snps_to_match'] = snps_to_match_ordered
     reorder_columns = ['snps_to_match']+ agg_df.columns[:-1].tolist()
 
+    # remove input snps that didn't ahve any matched snps
+    raw_final_matched_df = agg_df.loc[:, reorder_columns].copy()  # reorganize columns
+    input_snp_wo_matched_snps = raw_final_matched_df[(raw_final_matched_df.loc[:, column_names] == "None").all(1)].snps_to_match.tolist()
 
-    final_matched_df = agg_df.loc[:, reorder_columns].copy()  # reorganize columns
+    # TO DO: ADD THESE SNPS WITHOUT MATCHES TO EXCLUED SNPS file
+
+
+
+    final_matched_df = raw_final_matched_df.loc[~raw_final_matched_df['snps_to_match'].isin(input_snp_wo_matched_snps)].copy()
     final_matched_df.rename(columns={'snps_to_match': 'lead_snp'}, inplace=True) # necessary for downstream analysis
     final_matched_df.to_csv(OutObj.get('matched_snps_file'), sep="\t", index=False)
     logger.debug("Wrote matched SNPs to: {}".format(OutObj.get('matched_snps_file')))

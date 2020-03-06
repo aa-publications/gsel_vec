@@ -51,10 +51,12 @@ def per_set_overlap(long_df):
     count_df  = long_df.loc[long_df['set']!='ld_snp'].groupby(['lead_snp', 'set']).size().reset_index().rename(columns={0:'num_snps'})
     missing_df = long_df.loc[long_df['set']!='ld_snp'].groupby(['lead_snp', 'set'])['is_na'].sum().reset_index().rename(columns={'is_na':'num_missing_anno'})
 
+    # prop_coverage  ==  for each lead snp (ld expanded) and control set pair --> # of control snps with an annotation value
     anno_coverage_df = pd.merge(count_df, missing_df, on=['lead_snp', 'set'], how='outer')
     anno_coverage_df['prop_coverage']= 100-((anno_coverage_df['num_missing_anno']/anno_coverage_df['num_snps'])*100).round(1)
 
 
+    # prop_coverage --> take the mean of prop_coverage across all the control sets
     # exclude gwas snps
     by_control_summary_df = anno_coverage_df.groupby(['lead_snp']).agg({'prop_coverage':['mean','std','count']}).reset_index()
     by_control_summary_df.columns = by_control_summary_df.columns.droplevel()
@@ -63,7 +65,7 @@ def per_set_overlap(long_df):
 
     return by_control_summary_df
 
-def groupby_mean(control_long_df, gwas_long_df, by):
+def grouby_stat(control_long_df, gwas_long_df, by):
 
     if by =='mean':
         gwas_df = gwas_long_df.groupby(['lead_snp', 'set']).mean().unstack().reset_index()
@@ -95,12 +97,12 @@ def get_mean_median_by_lead_snp(long_df):
 
     # mean and meadian skip over np.nan
     # if nan is present in output, that means it tried to summarize over only np.nans
-    mean_df = groupby_mean(control_long_df, gwas_long_df, 'mean')
-    median_df = groupby_mean(control_long_df, gwas_long_df, 'mean')
+    mean_df = grouby_stat(control_long_df, gwas_long_df, 'mean')
+    median_df = grouby_stat(control_long_df, gwas_long_df, 'median')
 
     return mean_df, median_df
 
-def intersect_annotation(anno_label_path_pair, matched_file, output_dir=None, anno_label=None):
+def intersect_annotation(anno_label_path_pair, matched_file, output_dir=None, anno_label=None, summary_stat='median'):
 
     anno_label = anno_label_path_pair[0]
     anno_file = anno_label_path_pair[1]
@@ -126,14 +128,18 @@ def intersect_annotation(anno_label_path_pair, matched_file, output_dir=None, an
     by_control_set_overlap_df = per_set_overlap(long_df)
 
     # summarize by lead_snp
-    _, median_df = get_mean_median_by_lead_snp(long_df)
+    mean_df, median_df = get_mean_median_by_lead_snp(long_df)
 
     #pval
-    pval_df, z_score_df = create_pval_zscore_df(median_df)
+    median_pval_df, median_z_score_df = create_pval_zscore_df(median_df)
+    mean_pval_df, mean_z_score_df = create_pval_zscore_df(mean_df)
 
 
 
-    return {'anno_label':anno_label, 'median_df':median_df, 'pval_df':pval_df, 'zscore_df':z_score_df,  'pooled_overlap': pooled_overlap_df, 'by_control_set_overlap':by_control_set_overlap_df}
+    return {'anno_label':anno_label, 'median_df':median_df, 'mean_df':mean_df,
+            'mean_pval_df':mean_pval_df, 'mean_zscore_df':mean_z_score_df,
+            'median_pval_df':median_pval_df, 'median_zscore_df':median_z_score_df,
+            'pooled_overlap': pooled_overlap_df, 'by_control_set_overlap':by_control_set_overlap_df, }
 
 def set_up_outputs(OutputObj, anno_label_list):
 
@@ -152,6 +158,8 @@ def set_up_outputs(OutputObj, anno_label_list):
                                 'by_control_set_{}_overlap.tsv'.format(anno_label), custom_root=anno_root)
         OutputObj.add_output('{}_median_output'.format(anno_label),
                                 'median_{}_per_lead_snp.tsv'.format(anno_label), custom_root=anno_root)
+        OutputObj.add_output('{}_mean_output'.format(anno_label),
+                                'mean_{}_per_lead_snp.tsv'.format(anno_label), custom_root=anno_root)
         OutputObj.add_output('{}_pvalue'.format(anno_label),
                                 'pvalue_{}_per_lead_snp.tsv'.format(anno_label), custom_root=anno_root)
         OutputObj.add_output('{}_zscore'.format(anno_label),
@@ -228,7 +236,7 @@ def calc_pval_and_summary(values, control_cols):
     if np.isnan(input_snp_value):
         pval=np.nan
     else:
-        
+
         pval = np.sum(na_removed_control_values > input_snp_value)/len(na_removed_control_values)
 
     num_control_snps = len(na_removed_control_values)
@@ -287,7 +295,7 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
     num_threads = cpu_count()
     mstart = time.time()
     logger.info("Using {:,} cores to intersect {:,} annotations.".format(num_threads-1, len(anno_path_dict)))
-    pool = Pool(num_threads-1)
+    pool = Pool(processes=4, maxtasksperchild=10)
     partial_intersect_anno = partial(intersect_annotation, matched_file=matched_file)
 
     # create label: filepath dictionary pairs
@@ -303,16 +311,20 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
     for anno_result in  intersect_ouputs:
 
         anno_label = anno_result['anno_label']
-        median_df = anno_result['median_df']
+        # median_df = anno_result['median_df']
+        mean_df = anno_result['mean_df']
         pooled_overlap_df = anno_result['pooled_overlap']
         by_control_set_overlap = anno_result['by_control_set_overlap']
-        pvalue_df = anno_result['pval_df']
-        zscore_df = anno_result['zscore_df']
+
+        mean_pvalue_df = anno_result['mean_pval_df']
+        mean_zscore_df = anno_result['mean_zscore_df']
+        # median_pvalue_df = anno_result['median_pval_df']
+        # median_zscore_df = anno_result['median_zscore_df']
 
 
         combined_df = pd.merge( pd.merge(by_control_set_overlap.loc[:, ['lead_snp','mean_prop','std_prop']],
-                    median_df.loc[:, ['lead_snp','lead_snp_anno']], on='lead_snp', how='outer'),
-                    pvalue_df.loc[:, ['lead_snp','pvalue','reject_h0_benj_hoch','corrected_pval_benj_hoch']], on='lead_snp', how='outer')
+                    mean_df.loc[:, ['lead_snp','lead_snp_anno']], on='lead_snp', how='outer'),
+                    mean_pvalue_df.loc[:, ['lead_snp','pvalue','reject_h0_benj_hoch','corrected_pval_benj_hoch']], on='lead_snp', how='outer')
 
         combined_df.mean_prop = combined_df.mean_prop.round(2)
         combined_df.std_prop = combined_df.std_prop.round(2)
@@ -320,11 +332,11 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
 
 
         combined_df.to_csv(OutObj.get('{}_enrichment_summary'.format(anno_label)), sep="\t", index=False)
-        median_df.to_csv(OutObj.get('{}_median_output'.format(anno_label)), sep="\t", index=False)
+        mean_df.to_csv(OutObj.get('{}_mean_output'.format(anno_label)), sep="\t", index=False)
         pooled_overlap_df.to_csv(OutObj.get('{}_pooled_overlap_output'.format(anno_label)) , sep="\t", index=False)
         by_control_set_overlap.to_csv(OutObj.get('{}_by_control_set_overlap_output'.format(anno_label)) , sep="\t", index=False)
-        pvalue_df.to_csv(OutObj.get('{}_pvalue'.format(anno_label)) , sep="\t", index=False)
-        zscore_df.to_csv(OutObj.get('{}_zscore'.format(anno_label)) , sep="\t", index=False)
+        mean_pvalue_df.to_csv(OutObj.get('{}_pvalue'.format(anno_label)) , sep="\t", index=False)
+        mean_zscore_df.to_csv(OutObj.get('{}_zscore'.format(anno_label)) , sep="\t", index=False)
 
 
 

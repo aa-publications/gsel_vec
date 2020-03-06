@@ -105,6 +105,10 @@ def load_ld_df(LD_DIR):
     for ldfile in glob(LD_DIR+"/*.ld"):
 
         temp_ld_df = pd.read_csv( ldfile, sep="\s+", usecols=['SNP_A','SNP_B','R2'], dtype={'SNP_A':str,'SNP_B':np.str,'R2':np.float16})
+        temp_ld_df.SNP_A = temp_ld_df.SNP_A.astype('category')
+        temp_ld_df.SNP_B = temp_ld_df.SNP_B.astype('category')
+
+
         ld_df = ld_df.append(temp_ld_df)
 
     return ld_df
@@ -207,8 +211,11 @@ def to_row_per_csnp(selected_ld_snps, n_control_snps):
 
 def report_mem():
     process = psutil.Process(os.getpid())
+
+
+
     return np.round(process.memory_info().rss/1000000)
-    
+
 def format_gwas_lead_and_ld_snps(lead_gwas_snps, gwas_lead_ld_df):
     temp_lead_df = pd.DataFrame({'lead_snp': lead_gwas_snps, 'ld_snp': lead_gwas_snps, 'R2': [1.0]*len(lead_gwas_snps)})
     final_lead_ld_df = pd.concat((gwas_lead_ld_df, temp_lead_df),axis=0)
@@ -217,7 +224,7 @@ def format_gwas_lead_and_ld_snps(lead_gwas_snps, gwas_lead_ld_df):
     final_lead_ld_df.reset_index(inplace=True, drop=True)
     final_lead_ld_df.R2.replace('NONE', np.nan, inplace=True)
     final_lead_ld_df.R2 = pd.to_numeric(final_lead_ld_df.R2)
-    
+
     return final_lead_ld_df
 
 
@@ -259,11 +266,11 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
 
 
     ###
-    ###   load lead and LD pairs within gwas snps 
+    ###   load lead and LD pairs within gwas snps
     ###
 
 
-    # note: this df should contain at least one row for each lead gwas snp 
+    # note: this df should contain at least one row for each lead gwas snp
     gwas_lead_ld_df = pd.read_csv(gwas_snps_r2_file, sep="\t")
     lead_gwas_snps = gwas_lead_ld_df.lead_snp.unique().tolist()
 
@@ -289,12 +296,12 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
     ld_counts_df = all_ld_counts_df.loc[all_ld_counts_df.lead_snp.isin(matched_df.lead_snp)].copy()
     del all_ld_counts_df
 
-    
+
     # ensure that only the matched_lead_snps are present in the ld counts table
     temp_ld_counts_df = ld_counts_df.copy()
     keep_ld_counts_df = temp_ld_counts_df.loc[temp_ld_counts_df.lead_snp.isin(matched_lead_snps)].copy()
     keep_ld_counts_df.set_index('lead_snp', inplace=True)
-    
+
     # reorder the ld_counts_df rows (table of ld snps for input/gwas snp)
     ordered_ld_counts_df = keep_ld_counts_df.reindex(ordered_lead_snps)
 
@@ -303,6 +310,8 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
     ###
 
     ld_df = load_ld_df(control_ld_dir)
+
+
     # force the control snp to be in the first column
     # note: not all lead snps are guarenteed to be present in forced_ld_df, AND that is FINE!
     #            -- I check for missing lead snps later since it would intefere w/ intermediate logic
@@ -396,6 +405,7 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
         all_snps = list()
         all_r2 = list()
         for ind_snp, input_snp in enumerate(ordered_lead_snps):
+            # break
             # input_snp = ordered_lead_snps[0]
 
             logger.debug(f"LD expanded control snps for {ind_snp} out of {len(ordered_lead_snps)} lead snps") if ((ind_snp % 25) ==0) else None
@@ -458,13 +468,9 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
         control_df = to_row_per_csnp(selected_ld_snps,n_control_snps)
         control_r2_df = to_row_per_csnp(selected_ld_r2_snps, n_control_snps)
 
-
+        logger.debug(f"done multiplying mask: {report_mem():,}")
         # create lead snp columns to concat w/ control snps df
         r2_filt_final_lead_ld_df = final_lead_ld_df.loc[  (final_lead_ld_df['R2'] > lower_ld_threshold)  & (final_lead_ld_df['R2'] <= uppper_ld_threshold)].reset_index(drop=True)
-
-
-        # assert control_df.shape[0] == r2_filt_final_lead_ld_df.shape[0], "Number of rows do not match between the two dataframes (lead snps and control snps) that are going to be concatentated "
-        # assert control_r2_df.shape[0] == r2_filt_final_lead_ld_df.shape[0], "Number of rows do not match between the two dataframes (lead snps and control snps) that are going to be concatentated "
 
 
         if (uppper_ld_threshold != 1):
@@ -495,8 +501,15 @@ def ld_expand_all_control_snps(lead_ld_counts_file, gwas_snps_r2_file, matched_f
         logger.debug(f"done with control df: {report_mem():,}")
         lead_control_ld_expanded_r2_df = pd.concat( (r2_filt_final_lead_ld_df, control_r2_df), axis=1, ignore_index=False)
         logger.debug(f"about to append {report_mem():,}")
+
+        del control_df, control_r2_df, r2_filt_final_lead_ld_df
+        gc.collect()
+
         ld_bins_expanded_df = ld_bins_expanded_df.append(lead_control_ld_expanded_df)
         ld_bins_r2_expanded_df = ld_bins_r2_expanded_df.append(lead_control_ld_expanded_r2_df)
+        del lead_control_ld_expanded_df, lead_control_ld_expanded_r2_df
+        gc.collect()
+
 
         logger.debug(f"after append {report_mem():,}")
 

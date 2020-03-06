@@ -67,6 +67,8 @@ def create_r2_dict(r2_file):
 
 def bin_ldsnp_per_leadsnp(og_lead_ld_r2_df):
     ''' for each lead snp, find each snp in LD with it; calculate its r2 and then bin the pair by LD'''
+    # ensure that each input leaad snp has a row even if it is all zeros
+
 
     # -------
     # SET UP LD BINS

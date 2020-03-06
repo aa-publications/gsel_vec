@@ -90,10 +90,22 @@ def parse_input_args():
     return csnps_file, thous_gen_file, output_root
 
 
+def rm_input_snps_without_matched_snps(og_wide_snp_df, snps_df):
+
+    wide_snp_df = og_wide_snp_df.copy()
+    input_snps_wo_matched_snps = wide_snp_df.loc[wide_snp_df['Set_']=='None', 'lead_snp'].unique()
+
+    for this_snp in input_snps_wo_matched_snps:
+        assert (wide_snp_df.loc[wide_snp_df['lead_snp']==this_snp].shape[0] == (snps_df.shape[1]-1)), "snps with none that do not meet criteria for exclusion"
+
+    clean_wide_snp_df = wide_snp_df.loc[~wide_snp_df.lead_snp.isin(input_snps_wo_matched_snps )].copy()
+
+    return clean_wide_snp_df, input_snps_wo_matched_snps
+
 def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root,  control_snps_ld_expand_r2=0.8):
 
     sstart = time.time()
-    logger.info("Starting to find LD snps for control snps.")
+    logger.info("Getting LD snps for control snps.")
 
     # set up outputs
     output_dir = os.path.join(output_root, 'ld_snps_for_control_snps')
@@ -112,8 +124,17 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
     # convert wide to long format
     wide_snp_df = pd.wide_to_long(snps_df, stubnames='Set_', i="lead_snp", j="Set")
     wide_snp_df.reset_index(inplace=True)
+
+    # # TODO: might delete this...
+    # # remove Nones
+    # wide_snp_df, input_snps_wo_matched_snps = rm_input_snps_without_matched_snps(raw_wide_snp_df, snps_df)
+    # wide_snp_df.reset_index(inplace=True, drop=True)
+    # if len(input_snps_wo_matched_snps) > 0:
+    #     logger.info(f"Removed {len(input_snps_wo_matched_snps):,} out of {snps_df.shape[0]:,} input snps that did not have any matched snps.")
+
     wide_snp_df['chromosome']  = wide_snp_df.Set_.apply(lambda x: int(x.split(":")[0]))
     wide_snp_df.sort_values('Set_', inplace=True)
+
 
     # write unique ld control snps to file
     for chrm in np.arange(1,23,1):
@@ -126,10 +147,10 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
                     fw.write(ldsnp + "\n")
 
 
+
     ###
     ###    run plink to calc r2
     ###
-
 
 
     for chrm in np.arange(1,23,1):
