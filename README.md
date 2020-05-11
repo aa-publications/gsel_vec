@@ -3,12 +3,12 @@ This pipeline will detect evolutionary signatures from GWAS summary statistics.
 
 **Dependencies:**
 
-1) Please download the following folders to gsel_vec directory.
+1) Download the following folders to gsel_vec directory.
     - "snpsnap_database" - [link (2.4 GB)](https://drive.google.com/drive/folders/1P9r9axKakwY20eD_f3NCoRY0g1aLcp2T?usp=sharing)
     - "1kg" - [link (1.5 GB)](https://drive.google.com/drive/folders/1yjp31LhZSi2Ftu_QmgKDKevLqHKJTH-0?usp=sharing)
     - "anno_dict" - [link (4.1 GB)](https://drive.google.com/drive/folders/1dps7iWshulKKEukxCdBu6MTy3j2s8KCj?usp=sharing)
 
-2) Please use the conda enviornment provided.
+2) Install conda environment to run scripts.
 
 `conda env create -n conda-env -f evo_sig_gwas.yml`
 
@@ -25,3 +25,6 @@ This pipeline will detect evolutionary signatures from GWAS summary statistics.
 - should be a tab separated file with one row per SNP
 - should have the following headers in this order: ['snp', 'chr', 'pos', 'p']
 
+
+## Example
+See demo.sh for example.
