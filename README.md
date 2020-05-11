@@ -8,8 +8,9 @@ Please download the following folders to gsel_vec directory.
 2) "1kg" - link (X GB)
 3) "create_annotations" - link (X GB)
 
-Please use the conda enviornment provided:
-conda env create -n conda-env -f evo_sig_gwas.yml
+Please use the conda enviornment provided.
+
+`conda env create -n conda-env -f evo_sig_gwas.yml`
 
 
 ## Inputs
