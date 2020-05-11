@@ -42,7 +42,7 @@ dist="ld0.1"
 snpsnap_db_file = f"/dors/capra_lab/projects/gwas_allele_age_evolution/data/snpsnap_database/raw_download/{pop}/{dist}_collection.tab.gz"
 
 
-output_dir="/scratch/abraha1/gsel_/gsel_pipeline_vec/create_annotations/anno_dicts"
+output_dir="/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/create_annotations/anno_dict"
 
 # annotaiton dictionary
 
@@ -125,6 +125,11 @@ param_dict={'argweave':{'anno_label':"argweave",
      'anno_suffix':"_xpehh_eas_eur.bed.gz" ,
      'annotation_dir':"/dors/capra_lab/projects/gwas_allele_age_evolution/data/iHS_ress/xpehh_results/xpehh_results_all/EAS_EUR",
      'snpsnap_anno_file':"/dors/capra_lab/projects/gwas_allele_age_evolution/data/iHS_ress/xpehh_results/xpehh_results_all/EAS_EUR/snpsnap_intersect/all_chr_snpsnap_intersect.bed.gz"},
+
+     'syn_age':{'anno_label':"syn_age",
+     'anno_suffix':"_syn_age_formmated.bed.gz" ,
+     'annotation_dir':"/dors/capra_lab/projects/gwas_allele_age_evolution/data/annotations/syn_age",
+     'snpsnap_anno_file':"/dors/capra_lab/projects/gwas_allele_age_evolution/data/annotations/syn_age/snpsnap_intersect/all_chr_snpsnap_intersect.bed.gz"},
 
      }
 

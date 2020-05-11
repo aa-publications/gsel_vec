@@ -16,6 +16,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
+from scipy import stats
 from statsmodels.stats.multitest import multipletests
 from functools import partial
 from multiprocessing import Pool, cpu_count
@@ -28,6 +29,10 @@ logger = logging.getLogger('main.{}'.format(__name__))
 from datetime import datetime
 DATE = datetime.now().strftime('%Y-%m-%d')
 
+
+# -----------
+# CONSTANTS
+# -----------
 
 
 # -----------
@@ -73,6 +78,12 @@ def grouby_stat(control_long_df, gwas_long_df, by):
     elif by =='median':
         gwas_df = gwas_long_df.groupby(['lead_snp', 'set']).median().unstack().reset_index()
         cntrl_df = control_long_df.groupby(['lead_snp', 'set']).median().unstack().reset_index()
+    elif by =='max':
+        gwas_df = gwas_long_df.groupby(['lead_snp', 'set']).max().unstack().reset_index()
+        cntrl_df = control_long_df.groupby(['lead_snp', 'set']).max().unstack().reset_index()
+    elif by =='min':
+        gwas_df = gwas_long_df.groupby(['lead_snp', 'set']).min().unstack().reset_index()
+        cntrl_df = control_long_df.groupby(['lead_snp', 'set']).min().unstack().reset_index()
 
 
     gwas_df.columns = gwas_df.columns.droplevel()
@@ -89,20 +100,22 @@ def grouby_stat(control_long_df, gwas_long_df, by):
 
     return summary_df
 
-def get_mean_median_by_lead_snp(long_df):
+def get_summary_by_lead_snp(long_df, summary_by):
 
     control_long_df = long_df.loc[long_df['set'] != 'ld_snp', ['lead_snp', 'set','anno']].copy()
     gwas_long_df = long_df.loc[long_df['set'] == 'ld_snp', ['lead_snp', 'set','anno']].copy()
 
+    assert summary_by in ['mean','median','max','min'], 'summary_by values is not valid'
 
     # mean and meadian skip over np.nan
     # if nan is present in output, that means it tried to summarize over only np.nans
-    mean_df = grouby_stat(control_long_df, gwas_long_df, 'mean')
-    median_df = grouby_stat(control_long_df, gwas_long_df, 'median')
+    # mean_df = grouby_stat(control_long_df, gwas_long_df, 'mean')
+    # median_df = grouby_stat(control_long_df, gwas_long_df, 'median')
+    summary_by_df = grouby_stat(control_long_df, gwas_long_df, summary_by)
 
-    return mean_df, median_df
+    return summary_by_df
 
-def intersect_annotation(anno_label_path_pair, matched_file, output_dir=None, anno_label=None, summary_stat='median'):
+def intersect_annotation(anno_label_path_pair, matched_file, two_sided_bool_dict, summary_type):
 
     anno_label = anno_label_path_pair[0]
     anno_file = anno_label_path_pair[1]
@@ -121,27 +134,32 @@ def intersect_annotation(anno_label_path_pair, matched_file, output_dir=None, an
     long_df['is_na'] = long_df.anno.isnull()
 
 
-    # annotation overlap: pool all snps across control sets and summarize by lead snp
-    pooled_overlap_df = pooled_overlap(long_df)
+    # remove after intersection...
+    if False:
 
-    # annotation overlap: summarize by lead snp per control set then take mean
-    by_control_set_overlap_df = per_set_overlap(long_df)
+        # annotation overlap: pool all snps across control sets and summarize by lead snp
+        pooled_overlap_df = pooled_overlap(long_df)
 
-    # summarize by lead_snp
-    mean_df, median_df = get_mean_median_by_lead_snp(long_df)
+        # annotation overlap: summarize by lead snp per control set then take mean
+        by_control_set_overlap_df = per_set_overlap(long_df)
+
+    else:
+        pooled_overlap_df = pd.DataFrame({'fake1':['fake'], 'fake2':['fake']})
+        by_control_set_overlap_df = pd.DataFrame({'fake1':['fake'], 'fake2':['fake']})
+
 
     #pval
-    median_pval_df, median_z_score_df = create_pval_zscore_df(median_df)
-    mean_pval_df, mean_z_score_df = create_pval_zscore_df(mean_df)
+    # summarize by lead_snp
+    summary_by_df = get_summary_by_lead_snp(long_df, summary_type)
+    summary_by_pval_df, summary_by_z_score_df = create_pval_zscore_df(summary_by_df, anno_label, two_sided_bool_dict)
 
 
+    return {'anno_label':anno_label, 'summary_by_df':summary_by_df,
+            'summary_by_pval_df':summary_by_pval_df, 'summary_by_zscore_df':summary_by_z_score_df,
+            'summary_type':summary_type,
+            'pooled_overlap': pooled_overlap_df, 'by_control_set_overlap':by_control_set_overlap_df}
 
-    return {'anno_label':anno_label, 'median_df':median_df, 'mean_df':mean_df,
-            'mean_pval_df':mean_pval_df, 'mean_zscore_df':mean_z_score_df,
-            'median_pval_df':median_pval_df, 'median_zscore_df':median_z_score_df,
-            'pooled_overlap': pooled_overlap_df, 'by_control_set_overlap':by_control_set_overlap_df, }
-
-def set_up_outputs(OutputObj, anno_label_list):
+def set_up_outputs(OutputObj, anno_label_list, summary_type):
 
 
     for anno_label in anno_label_list:
@@ -156,10 +174,10 @@ def set_up_outputs(OutputObj, anno_label_list):
                                 'pooled_{}_overlap.tsv'.format(anno_label) , custom_root=anno_root)
         OutputObj.add_output('{}_by_control_set_overlap_output'.format(anno_label),
                                 'by_control_set_{}_overlap.tsv'.format(anno_label), custom_root=anno_root)
-        OutputObj.add_output('{}_median_output'.format(anno_label),
-                                'median_{}_per_lead_snp.tsv'.format(anno_label), custom_root=anno_root)
-        OutputObj.add_output('{}_mean_output'.format(anno_label),
-                                'mean_{}_per_lead_snp.tsv'.format(anno_label), custom_root=anno_root)
+        OutputObj.add_output('{}_{}_output'.format(anno_label, summary_type),
+                                '{}_{}_per_lead_snp.tsv'.format(summary_type, anno_label), custom_root=anno_root)
+        # OutputObj.add_output('{}_{}_output'.format(anno_label, summary_type),
+        #                         '{}_{}_per_lead_snp.tsv'.format(summary_type, anno_label), custom_root=anno_root)
         OutputObj.add_output('{}_pvalue'.format(anno_label),
                                 'pvalue_{}_per_lead_snp.tsv'.format(anno_label), custom_root=anno_root)
         OutputObj.add_output('{}_zscore'.format(anno_label),
@@ -172,14 +190,14 @@ def set_up_outputs(OutputObj, anno_label_list):
     return OutputObj
 
 
-def create_pval_zscore_df(median_df):
+def create_pval_zscore_df(summary_df, anno_label, two_sided_bool_dict):
 
     # wide_df = long_df.pivot(index='lead_snp', columns='set_num', values='Set_')
 
 
-    control_cols = [col for col in  median_df.columns if col.startswith("Set_")]
+    control_cols = [col for col in  summary_df.columns if col.startswith("Set_")]
 
-    z_score_df = median_df.copy()
+    z_score_df = summary_df.copy()
     z_score_df['mean_controls'] = z_score_df.loc[:,control_cols].mean(1)
     z_score_df['std_controls'] = z_score_df.loc[:,control_cols].std(1)
     z_score_df['z_score'] = (z_score_df.lead_snp_anno - z_score_df.mean_controls)/z_score_df.std_controls
@@ -187,9 +205,15 @@ def create_pval_zscore_df(median_df):
     z_score_df = z_score_df.loc[:, ['lead_snp', 'lead_snp_anno', 'z_score', 'mean_controls', 'std_controls']].copy()
     z_score_df = z_score_df.round(3)
 
-    partial_pval = partial(calc_pval_and_summary, control_cols=control_cols)
-    pval_df = median_df.apply(partial_pval, axis=1, result_type='expand')
-    pval_df.columns = ['lead_snp','pvalue', 'lead_snp_anno', 'num_control_snps']
+
+    two_tailed_bool=two_sided_bool_dict[anno_label]
+
+    # calc p-value
+    partial_pval = partial(calc_pval_and_summary, control_cols=control_cols, two_tailed_bool=two_tailed_bool)
+    pval_df = summary_df.apply(partial_pval, axis=1, result_type='expand')
+    pval_df.columns = ['lead_snp','pvalue', 'test_type', 'lead_snp_anno', 'input_percentile', 'num_control_snps']
+
+
 
     no_na_pval_df = pval_df[~pval_df.isnull().any(1)].copy()
     na_pval_lead_snps = pval_df.loc[pval_df.isnull().any(1), 'lead_snp'].values.tolist()
@@ -213,7 +237,7 @@ def create_pval_zscore_df(median_df):
 
 
 
-    na_df = pd.DataFrame({'lead_snp':na_pval_lead_snps, 'pvalue':np.nan, 'lead_snp_anno':np.nan, 'num_control_snps':np.nan,
+    na_df = pd.DataFrame({'lead_snp':na_pval_lead_snps, 'pvalue':np.nan, 'test_type':np.nan, 'lead_snp_anno':np.nan, 'input_percentile':np.nan, 'num_control_snps':np.nan,
                    'reject_h0_benj_hoch':np.nan,
                    'corrected_pval_benj_hoch':np.nan})
 
@@ -222,33 +246,58 @@ def create_pval_zscore_df(median_df):
 
     return all_pval_df, z_score_df
 
-def calc_pval_and_summary(values, control_cols):
+def calc_pval_and_summary(values, control_cols, two_tailed_bool):
+
+    np.seterr(all='warn')
+
 
     # note will remove missing values or na before calculating p-value
     lead_snp = values.lead_snp
     input_snp_value = values.lead_snp_anno
-    control_snp_values = values[control_cols]
 
+
+    control_snp_values = values[control_cols]
     na_removed_control_values = control_snp_values[~control_snp_values.isnull()]
 
+    # A percentileofscore of 80% means that 80% of values are less than or equal to the provided score.
+    input_percentile = stats.percentileofscore(na_removed_control_values, input_snp_value,  kind='weak')
 
-    np.seterr(all='warn')
-    if np.isnan(input_snp_value):
-        pval=np.nan
+
+
+
+    # modify pval calc based on one tailed or two tailed test; have a default also
+    if two_tailed_bool:
+
+        pval = np.sum(na_removed_control_values >= input_snp_value)/len(na_removed_control_values)
+
+        if pval > 0.5:
+            pval = np.sum(na_removed_control_values <= input_snp_value)/len(na_removed_control_values)
+
+        pval = pval*2
+        test_type = 'two-tailed'
     else:
+        pval = np.sum(na_removed_control_values >= input_snp_value)/len(na_removed_control_values)
+        test_type = 'greater-than'
 
-        pval = np.sum(na_removed_control_values > input_snp_value)/len(na_removed_control_values)
+
+    # old way of doing on
+    # if np.isnan(input_snp_value):
+    #     pval=np.nan
+    # else:
+    #     pval = np.sum(na_removed_control_values > input_snp_value)/len(na_removed_control_values)
+
+
 
     num_control_snps = len(na_removed_control_values)
 
 
 
-    summary = [lead_snp, pval, input_snp_value, num_control_snps]
+    summary = [lead_snp, pval, test_type, input_snp_value, input_percentile, num_control_snps]
 
     return summary
 
 
-def intersect_all_annotations(anno_path_dict, matched_file, output_root):
+def intersect_all_annotations(anno_path_dict, two_sided_bool_dict, summary_type,  matched_file, output_root):
     """For matched control sets, intersect them with a selection annotation and return the mean and median for each locus.
             * each locus is defined by lead snp and LD snps (as defined earlier in the pipeline)
 
@@ -285,7 +334,7 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
 
     output_dir = os.path.join(output_root, 'selection_intersected_matched_sets')
     OutObj = Outputs(output_dir, overwrite=True)
-    OutObj = set_up_outputs(OutObj, anno_label_list)
+    OutObj = set_up_outputs(OutObj, anno_label_list, summary_type)
 
 
     ###
@@ -296,7 +345,7 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
     mstart = time.time()
     logger.info("Using {:,} cores to intersect {:,} annotations.".format(num_threads-1, len(anno_path_dict)))
     pool = Pool(processes=4, maxtasksperchild=10)
-    partial_intersect_anno = partial(intersect_annotation, matched_file=matched_file)
+    partial_intersect_anno = partial(intersect_annotation, matched_file=matched_file, two_sided_bool_dict=two_sided_bool_dict, summary_type=summary_type)
 
     # create label: filepath dictionary pairs
     anno_label_paths_pairs = [(anno_label,anno_path) for anno_label, anno_path in anno_path_dict.items()]
@@ -304,39 +353,48 @@ def intersect_all_annotations(anno_path_dict, matched_file, output_root):
 
     pool.close()
     pool.join()
-    logger.info("Done intersection all annotations. Took {:.2f} minutes.".format( (time.time() - mstart)/60))
+    logger.info("Done intersection on all annotations. Took {:.2f} minutes.".format( (time.time() - mstart)/60))
 
 
     # unpack and write
     for anno_result in  intersect_ouputs:
 
         anno_label = anno_result['anno_label']
-        # median_df = anno_result['median_df']
-        mean_df = anno_result['mean_df']
+
+        summary_by_df = anno_result['summary_by_df']
+        summary_by_pval_df = anno_result['summary_by_pval_df']
+        summary_by_zscore_df = anno_result['summary_by_zscore_df']
+        summary_type = anno_result['summary_type']
         pooled_overlap_df = anno_result['pooled_overlap']
         by_control_set_overlap = anno_result['by_control_set_overlap']
 
-        mean_pvalue_df = anno_result['mean_pval_df']
-        mean_zscore_df = anno_result['mean_zscore_df']
+        # mean_pvalue_df = anno_result['mean_pval_df']
+        # mean_zscore_df = anno_result['mean_zscore_df']
         # median_pvalue_df = anno_result['median_pval_df']
         # median_zscore_df = anno_result['median_zscore_df']
 
 
-        combined_df = pd.merge( pd.merge(by_control_set_overlap.loc[:, ['lead_snp','mean_prop','std_prop']],
-                    mean_df.loc[:, ['lead_snp','lead_snp_anno']], on='lead_snp', how='outer'),
-                    mean_pvalue_df.loc[:, ['lead_snp','pvalue','reject_h0_benj_hoch','corrected_pval_benj_hoch']], on='lead_snp', how='outer')
+        # temp: uncomment later...
+        # combined_df = pd.merge( pd.merge(by_control_set_overlap.loc[:, ['lead_snp','mean_prop','std_prop']],
+        #             summary_by_df.loc[:, ['lead_snp','lead_snp_anno']], on='lead_snp', how='outer'),
+        #             summary_by_pval_df.loc[:, ['lead_snp','pvalue','reject_h0_benj_hoch','corrected_pval_benj_hoch']], on='lead_snp', how='outer')
+        #
+        # combined_df['summary_type'] = summary_type
+        # combined_df.mean_prop = combined_df.mean_prop.round(2)
+        # combined_df.std_prop = combined_df.std_prop.round(2)
+        # combined_df.lead_snp_anno = combined_df.lead_snp_anno.round(4)
+        #
+        #
+        # combined_df.to_csv(OutObj.get('{}_enrichment_summary'.format(anno_label)), sep="\t", index=False)
+        # summary_by_df.to_csv(OutObj.get('{}_{}_output'.format(anno_label, summary_type)), sep="\t", index=False)
+        # pooled_overlap_df.to_csv(OutObj.get('{}_pooled_overlap_output'.format(anno_label)) , sep="\t", index=False)
+        # by_control_set_overlap.to_csv(OutObj.get('{}_by_control_set_overlap_output'.format(anno_label)) , sep="\t", index=False)
 
-        combined_df.mean_prop = combined_df.mean_prop.round(2)
-        combined_df.std_prop = combined_df.std_prop.round(2)
-        combined_df.lead_snp_anno = combined_df.lead_snp_anno.round(4)
 
 
-        combined_df.to_csv(OutObj.get('{}_enrichment_summary'.format(anno_label)), sep="\t", index=False)
-        mean_df.to_csv(OutObj.get('{}_mean_output'.format(anno_label)), sep="\t", index=False)
-        pooled_overlap_df.to_csv(OutObj.get('{}_pooled_overlap_output'.format(anno_label)) , sep="\t", index=False)
-        by_control_set_overlap.to_csv(OutObj.get('{}_by_control_set_overlap_output'.format(anno_label)) , sep="\t", index=False)
-        mean_pvalue_df.to_csv(OutObj.get('{}_pvalue'.format(anno_label)) , sep="\t", index=False)
-        mean_zscore_df.to_csv(OutObj.get('{}_zscore'.format(anno_label)) , sep="\t", index=False)
+        # uncomment this
+        summary_by_pval_df.to_csv(OutObj.get('{}_pvalue'.format(anno_label)) , sep="\t", index=False, na_rep="NaN")
+        # summary_by_zscore_df.to_csv(OutObj.get('{}_zscore'.format(anno_label)) , sep="\t", index=False, na_rep="NaN")
 
 
 
