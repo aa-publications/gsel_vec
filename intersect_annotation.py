@@ -134,18 +134,12 @@ def intersect_annotation(anno_label_path_pair, matched_file, two_sided_bool_dict
     long_df['is_na'] = long_df.anno.isnull()
 
 
-    # remove after intersection...
-    if False:
 
-        # annotation overlap: pool all snps across control sets and summarize by lead snp
-        pooled_overlap_df = pooled_overlap(long_df)
+    # annotation overlap: pool all snps across control sets and summarize by lead snp
+    pooled_overlap_df = pooled_overlap(long_df)
 
-        # annotation overlap: summarize by lead snp per control set then take mean
-        by_control_set_overlap_df = per_set_overlap(long_df)
-
-    else:
-        pooled_overlap_df = pd.DataFrame({'fake1':['fake'], 'fake2':['fake']})
-        by_control_set_overlap_df = pd.DataFrame({'fake1':['fake'], 'fake2':['fake']})
+    # annotation overlap: summarize by lead snp per control set then take mean
+    by_control_set_overlap_df = per_set_overlap(long_df)
 
 
     #pval
@@ -188,7 +182,6 @@ def set_up_outputs(OutputObj, anno_label_list, summary_type):
 
 
     return OutputObj
-
 
 def create_pval_zscore_df(summary_df, anno_label, two_sided_bool_dict):
 
@@ -276,6 +269,7 @@ def calc_pval_and_summary(values, control_cols, two_tailed_bool):
         pval = pval*2
         test_type = 'two-tailed'
     else:
+
         pval = np.sum(na_removed_control_values >= input_snp_value)/len(na_removed_control_values)
         test_type = 'greater-than'
 
@@ -295,7 +289,6 @@ def calc_pval_and_summary(values, control_cols, two_tailed_bool):
     summary = [lead_snp, pval, test_type, input_snp_value, input_percentile, num_control_snps]
 
     return summary
-
 
 def intersect_all_annotations(anno_path_dict, two_sided_bool_dict, summary_type,  matched_file, output_root):
     """For matched control sets, intersect them with a selection annotation and return the mean and median for each locus.
@@ -343,8 +336,10 @@ def intersect_all_annotations(anno_path_dict, two_sided_bool_dict, summary_type,
 
     num_threads = cpu_count()
     mstart = time.time()
-    logger.info("Using {:,} cores to intersect {:,} annotations.".format(num_threads-1, len(anno_path_dict)))
-    pool = Pool(processes=4, maxtasksperchild=10)
+    num_processes = 4
+    logger.info("Using {:,} cores to intersect {:,} annotations.".format(num_processes, len(anno_path_dict)))
+    # pool = Pool(processes=num_processes, maxtasksperchild=10)
+    pool = Pool(processes=1, maxtasksperchild=1)
     partial_intersect_anno = partial(intersect_annotation, matched_file=matched_file, two_sided_bool_dict=two_sided_bool_dict, summary_type=summary_type)
 
     # create label: filepath dictionary pairs
@@ -374,27 +369,29 @@ def intersect_all_annotations(anno_path_dict, two_sided_bool_dict, summary_type,
         # median_zscore_df = anno_result['median_zscore_df']
 
 
-        # temp: uncomment later...
-        # combined_df = pd.merge( pd.merge(by_control_set_overlap.loc[:, ['lead_snp','mean_prop','std_prop']],
-        #             summary_by_df.loc[:, ['lead_snp','lead_snp_anno']], on='lead_snp', how='outer'),
-        #             summary_by_pval_df.loc[:, ['lead_snp','pvalue','reject_h0_benj_hoch','corrected_pval_benj_hoch']], on='lead_snp', how='outer')
-        #
-        # combined_df['summary_type'] = summary_type
-        # combined_df.mean_prop = combined_df.mean_prop.round(2)
-        # combined_df.std_prop = combined_df.std_prop.round(2)
-        # combined_df.lead_snp_anno = combined_df.lead_snp_anno.round(4)
-        #
-        #
-        # combined_df.to_csv(OutObj.get('{}_enrichment_summary'.format(anno_label)), sep="\t", index=False)
-        # summary_by_df.to_csv(OutObj.get('{}_{}_output'.format(anno_label, summary_type)), sep="\t", index=False)
-        # pooled_overlap_df.to_csv(OutObj.get('{}_pooled_overlap_output'.format(anno_label)) , sep="\t", index=False)
-        # by_control_set_overlap.to_csv(OutObj.get('{}_by_control_set_overlap_output'.format(anno_label)) , sep="\t", index=False)
+
+        combined_df = pd.merge( pd.merge(by_control_set_overlap.loc[:, ['lead_snp','mean_prop','std_prop']],
+                    summary_by_df.loc[:, ['lead_snp','lead_snp_anno']], on='lead_snp', how='outer'),
+                    summary_by_pval_df.loc[:, ['lead_snp','pvalue','reject_h0_benj_hoch','corrected_pval_benj_hoch']], on='lead_snp', how='outer')
+
+        combined_df['summary_type'] = summary_type
+        combined_df.mean_prop = combined_df.mean_prop.round(2)
+        combined_df.std_prop = combined_df.std_prop.round(2)
+        combined_df.lead_snp_anno = combined_df.lead_snp_anno.round(4)
+
+
+        combined_df.to_csv(OutObj.get('{}_enrichment_summary'.format(anno_label)), sep="\t", index=False)
+        summary_by_df.to_csv(OutObj.get('{}_{}_output'.format(anno_label, summary_type)), sep="\t", index=False)
+        pooled_overlap_df.to_csv(OutObj.get('{}_pooled_overlap_output'.format(anno_label)) , sep="\t", index=False)
+        by_control_set_overlap.to_csv(OutObj.get('{}_by_control_set_overlap_output'.format(anno_label)) , sep="\t", index=False)
 
 
 
-        # uncomment this
+        # add the type of summary stat used for selection measures ...
         summary_by_pval_df.to_csv(OutObj.get('{}_pvalue'.format(anno_label)) , sep="\t", index=False, na_rep="NaN")
-        # summary_by_zscore_df.to_csv(OutObj.get('{}_zscore'.format(anno_label)) , sep="\t", index=False, na_rep="NaN")
+        summary_by_pval_df['summary_type_over_input_region']=summary_type
+        summary_by_zscore_df.to_csv(OutObj.get('{}_zscore'.format(anno_label)) , sep="\t", index=False, na_rep="NaN")
+        summary_by_zscore_df['summary_type_over_input_region']=summary_type
 
 
 

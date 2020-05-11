@@ -159,7 +159,7 @@ def get_matched_snps(snp_to_match, n_matches, anno_df, thresholds):
 
     try:
 
-        logger.info(f"on {snp_to_match}." + report_mem())
+        logger.debug(f"on {snp_to_match}." + report_mem())
         for attempt in range(5):
 
             # get interval thresholds
@@ -205,6 +205,8 @@ def write_excluded_snps(snps_to_match, keep_anno_df, excluded_snps_file):
     # remove hla snps from input snps to match
     hla_removed_snps_to_match = set(snps_to_match).difference(hla_snps_to_exclude)
 
+
+
     # include snps found in the SNPSNAP database, exclude others
     snps_included = set(keep_anno_df.loc[keep_anno_df.snpID.isin(hla_removed_snps_to_match), 'snpID'].values.tolist())
     snps_excluded = set(snps_to_match).difference(snps_included) # will incl hla snps that were excluded
@@ -215,6 +217,16 @@ def write_excluded_snps(snps_to_match, keep_anno_df, excluded_snps_file):
             f_ex.write('{}\n'.format(snp))
 
     return snps_included,snps_excluded
+
+def write_excluded_snps_w_insuff_matches(excluded_snps_file, snps_excluded):
+
+
+    # write excluded snps
+    with open(excluded_snps_file, 'a') as f_ex:
+        for snp in snps_excluded:
+            f_ex.write('{}\n'.format(snp))
+
+
 
 
 def write_match_quality(snps_to_match_ordered, matched_snps, n_matches, num_matched_found, quality_score_file,fsummary):
@@ -227,6 +239,13 @@ def write_match_quality(snps_to_match_ordered, matched_snps, n_matches, num_matc
 
     match_qual_df = pd.DataFrame({'lead_snp':snps_to_match_ordered, 'num_uniq_matched':num_matched_found, 'num_match_requested':[n_matches]*len(num_matched_found)})
     match_qual_df['insuff_matches'] = match_qual_df.num_uniq_matched < n_matches
+
+    # mark as True if there is only < 90% of the requested number of matched snps
+    # note: this is unique matched snps...
+    n_match_thresh = n_matches*0.90
+    match_qual_df['n_matches_below_0.9'] = match_qual_df.num_uniq_matched < n_match_thresh
+
+
     match_qual_df.to_csv(quality_score_file, sep="\t", index=False)
     print("Wrote match quality per snp to: {}".format(quality_score_file))
 
@@ -239,6 +258,8 @@ def write_match_quality(snps_to_match_ordered, matched_snps, n_matches, num_matc
 
     fsummary.writelines(">>> Insufficient Match Percentage: {}\n".format(insuff_matches_percent))
     fsummary.writelines(">>> Median Match Size Percentage: {}\n".format(median_match_size_percent))
+
+    return match_qual_df
 
 
 def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
@@ -294,7 +315,7 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     # start multithreading - one SNP per thread
     num_threads = cpu_count()
     mstart = time.time()
-    logger.info("Generating {:,} control sets for each lead snp using {:,} cores.".format(n_matches, num_threads-1))
+    logger.debug("Generating {:,} control sets for each lead snp using {:,} cores.".format(n_matches, num_threads-1))
 
     pool = Pool(processes=4, maxtasksperchild=10)
     partial_get_matched_snps = partial(get_matched_snps, n_matches=n_matches, anno_df=keep_anno_df, thresholds=thresholds)
@@ -315,23 +336,34 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     raw_final_matched_df = agg_df.loc[:, reorder_columns].copy()  # reorganize columns
     input_snp_wo_matched_snps = raw_final_matched_df[(raw_final_matched_df.loc[:, column_names] == "None").all(1)].snps_to_match.tolist()
 
-    # TO DO: ADD THESE SNPS WITHOUT MATCHES TO EXCLUED SNPS file
-
-
-
-    final_matched_df = raw_final_matched_df.loc[~raw_final_matched_df['snps_to_match'].isin(input_snp_wo_matched_snps)].copy()
-    final_matched_df.rename(columns={'snps_to_match': 'lead_snp'}, inplace=True) # necessary for downstream analysis
-    final_matched_df.to_csv(OutObj.get('matched_snps_file'), sep="\t", index=False)
-    logger.debug("Wrote matched SNPs to: {}".format(OutObj.get('matched_snps_file')))
 
 
     ###
     ###   evaluate quality of matching
     ###
 
-    write_match_quality(snps_to_match_ordered, matched_snps, n_matches, num_matched_found, OutObj.get('quality_score_file'), fsummary)
+    match_qual_df = write_match_quality(snps_to_match_ordered, matched_snps, n_matches, num_matched_found, OutObj.get('quality_score_file'), fsummary)
     fsummary.writelines("Done! Took {:.2f} minutes".format( (time.time() - start)/60))
     fsummary.close()
+
+    # exclude snps with < 90% of the required number of control snps
+    ex_insuff_input_snps = set(match_qual_df.loc[match_qual_df['n_matches_below_0.9'] == True, 'lead_snp'].values.tolist())
+    write_excluded_snps_w_insuff_matches(OutObj.get('excluded_snps_file'), ex_insuff_input_snps)
+
+    ###
+    ###    write final matched set
+    ###
+    snps_to_remove = set(input_snp_wo_matched_snps).union(ex_insuff_input_snps)
+    logger.info("excluded {:,} input snps.".format(len(snps_to_remove)))
+
+
+
+    final_matched_df = raw_final_matched_df.loc[~raw_final_matched_df['snps_to_match'].isin(snps_to_remove)].copy()
+    final_matched_df.rename(columns={'snps_to_match': 'lead_snp'}, inplace=True) # necessary for downstream analysis
+    final_matched_df.to_csv(OutObj.get('matched_snps_file'), sep="\t", index=False)
+    logger.debug("Wrote matched SNPs to: {}".format(OutObj.get('matched_snps_file')))
+
+
 
 
 

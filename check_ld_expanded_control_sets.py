@@ -247,7 +247,7 @@ def check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead
 
 
     # set up outputs
-    logger.info("Analyzing LD expanded control sets...")
+    logger.info("Checking LD expanded control sets...")
     output_dir = os.path.join(output_root, 'check_ld_expanded_matached_sets')
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs(OutObj)
@@ -336,7 +336,7 @@ def check_ld_expanded_sets(snpsnap_db_file, ld_expanded_control_sets_file , lead
 
 
     if (uniq_chrom_per_lead_df == 1).all(1).all():
-        logger.info("For each input/lead gwas snp, the ld expanded control snps are on the same chromosome.")
+        logger.debug("For each input/lead gwas snp, the ld expanded control snps are on the same chromosome.")
     else:
         logger.info("WARNING... there are difference chromosomes for a given set of ld expanded control snps.")
 

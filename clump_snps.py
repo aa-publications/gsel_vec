@@ -247,19 +247,35 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas
     logger.info(f"Loaded GWAS summary stats with {gwas_df.shape[0]} rows.")
 
     # write input snps by chromosome
-    logger.info(f"Splitting GWAS summary stats by chromosome.")
+    logger.debug(f"Splitting GWAS summary stats by chromosome.")
     gwasfilename = os.path.split(gwas_summary_file)[1]
-    gwas_stats_by_chr_files_dict, gwas_snps_by_chr_files_dict  = write_gwas_sumstats_by_chr(gwas_df, OutObj.get('by_chr_dir'), OutObj.get('gstats_pos_by_chr_dir'), gsum_header['chr'], gsum_header['basepair'], gwasfilename, gsum_header['pvalue'])
 
+
+    ###
+    ###    error check gwas summary stats
+    ###
+
+    # check if for non-autosomal chromosomes and wrong chromosome format
+    if not np.all([chrm in list(np.arange(1,23)) for chrm in gwas_df.chr.unique().tolist()]):
+        sys.exit("GWAS summary stats file had non-autosomal chromosomes OR did not match required format.")
+
+
+    temp_gwas_df = gwas_df.copy()
+    temp_gwas_df['chr_pos'] = gwas_df['chr'].map(str) + ":" + gwas_df['pos'].map(str)
+    if (temp_gwas_df.chr_pos.duplicated(keep=False).sum() > 0):
+        sys.exit("GWAS summary stats file had duplicated snps based on their chromosome and position.")
+
+    del temp_gwas_df
 
 
 
     ##
     ## run plink clump by chromosome
     ##
+    gwas_stats_by_chr_files_dict, gwas_snps_by_chr_files_dict  = write_gwas_sumstats_by_chr(gwas_df, OutObj.get('by_chr_dir'), OutObj.get('gstats_pos_by_chr_dir'), gsum_header['chr'], gsum_header['basepair'], gwasfilename, gsum_header['pvalue'])
 
 
-    logger.info(f"Running plink clump on gwas variants by chromosome.")
+    logger.debug(f"Running plink clump on gwas variants by chromosome.")
     keep_warnings = []
     # for thisfile in glob.glob(OutObj.get('by_chr_dir')+"/chr*"):
     for chr_num, thisfile in gwas_stats_by_chr_files_dict.items():
@@ -305,7 +321,7 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas
     ##
 
 
-    logger.info("Calculating pairwise r2 for lead and LD gwas variants based on clumping parameters.")
+    logger.debug("Calculating pairwise r2 for lead and LD gwas variants based on clumping parameters.")
 
 
     # load all lead_snp and ld_snp pairs
@@ -384,7 +400,6 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas
     logger.info(f"Done clumping GWAS summary stats. Found {store_ld_bins_df.lead_snp.nunique() } lead snps and took {(time.time()-tstart)/60:.2f} minutes.")
 
     return OutObj
-
 
 
 def clump_snp_list(snps_list_file, output_root, thous_gen_file, min_r2_to_ld_exp_lead_snp=0.9, min_r2_for_input_snp_indep=0.9):
