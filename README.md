@@ -21,7 +21,7 @@ Pass these required arguments (in this order) to run_evo_sig.py
 
 
 
-** GWAS summary statistics file format: **
+**GWAS summary statistics file format:**
 - should be a tab separated file with one row per SNP
 - should have the following headers in this order: ['snp','chr','pos','p']
 
