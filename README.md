@@ -1,11 +1,15 @@
 # Evolutionary signatures from GWAS
 This pipeline will detect evolutionary signatures from GWAS summary statistics.
 
-Dependencies:
-Please download the following folder to gsel_vec directory.
+**Dependencies:**
+
+Please download the following folders to gsel_vec directory.
 1) "snpsnap_database" - link (X GB)
 2) "1kg" - link (X GB)
 3) "create_annotations" - link (X GB)
+
+Please use the conda enviornment provided:
+conda env create -n conda-env -f evo_sig_gwas.yml
 
 
 ## Inputs
