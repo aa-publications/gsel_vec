@@ -23,5 +23,5 @@ This pipeline will detect evolutionary signatures from GWAS summary statistics.
 
 **GWAS summary statistics file format:**
 - should be a tab separated file with one row per SNP
-- should have the following headers in this order: ['snp','chr','pos','p']
+- should have the following headers in this order: ['snp', 'chr', 'pos', 'p']
 
