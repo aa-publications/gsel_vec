@@ -13,8 +13,6 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-import matplotlib.pyplot  as plt
-
 DATE = datetime.now().strftime('%Y-%m-%d')
 
 
@@ -182,18 +180,6 @@ def make_ldscore_df(og_control_sets_df, og_ld_df, control_cols ):
 
     return ldscore_df
 
-def plot():
-    # under dev
-    # %%
-    label='MAF'
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10,8))
-    ax.errorbar(x = maf_mean_std_df.lead_snp, y=maf_mean_std_df.mean_control_snp_maf, yerr=maf_mean_std_df.std_control_snp_maf, marker='.', elinewidth=1, linewidth=0, capsize=4, color='black', alpha=0.9)
-    plt.plot(maf_mean_std_df.lead_snp_snp_maf, marker='o', color='r', markersize=4, linewidth=0,)
-    plt.xticks(rotation=325, ha='left', va='top', fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.xlabel('GWAS Lead SNPs', fontsize=20)
-    plt.ylabel('{}'.format(label), fontsize=20)
-    plt.title("{} of LD Expanded Control Sets compared to Lead SNP locus".format(label), fontsize=20)
 
 def combine_summary_dfs(summary_maf_df,maf_mean_std_df, gcount_mean_std_df, dist_mean_std_df, ldbuds_mean_std_df ):
 

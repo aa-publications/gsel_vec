@@ -1,6 +1,11 @@
 # Evolutionary signatures from GWAS
 This pipeline will detect evolutionary signatures from GWAS summary statistics.
 
+Dependencies:
+Please download the following folder to gsel_vec directory.
+1) "snpsnap_database" - link (X GB)
+2) "1kg" - link (X GB)
+3) "create_annotations" - link (X GB)
 
 
 ## Inputs
@@ -11,6 +16,7 @@ Pass these required arguments (in this order) to run_evo_sig.py
 
 
 
-GWAS Summary Stat Format:
+** GWAS summary statistics file format: **
 - should be a tab separated file with one row per SNP
 - should have the following headers in this order: ['snp','chr','pos','p']
+
