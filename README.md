@@ -4,9 +4,9 @@ This pipeline will detect evolutionary signatures from GWAS summary statistics.
 **Dependencies:**
 
 Please download the following folders to gsel_vec directory.
-1) "snpsnap_database" - link (X GB)
-2) "1kg" - link (X GB)
-3) "create_annotations" - link (X GB)
+1) "snpsnap_database" - [link (2.4 GB)](https://drive.google.com/drive/folders/1P9r9axKakwY20eD_f3NCoRY0g1aLcp2T?usp=sharing)
+2) "1kg" - [link (1.5 GB)](https://drive.google.com/drive/folders/1yjp31LhZSi2Ftu_QmgKDKevLqHKJTH-0?usp=sharing)
+3) "anno_dict" - [link (4.1 GB)](https://drive.google.com/drive/folders/1dps7iWshulKKEukxCdBu6MTy3j2s8KCj?usp=sharing)
 
 Please use the conda enviornment provided.
 
