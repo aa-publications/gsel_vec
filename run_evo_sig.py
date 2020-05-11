@@ -10,6 +10,7 @@
 import os
 import sys
 import time
+import argparse
 import numpy as np
 import pandas as pd
 
@@ -20,10 +21,8 @@ sys.path.append('/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipe
 from clump_snps import clump_snps, clump_snp_list
 from match_snps import match_snps
 from get_ldsnps_for_control_snps import get_ldsnps_for_control_snps
-# from ld_expand_control_snp_set import ld_expand_control_snps
-# from dev_ld_expand_all_control_sets import ld_expand_control_snps
 from combine_control_sets import combine_control_sets
-from dev_ld_expand_all_control_sets import ld_expand_all_control_snps
+from ld_expand_all_control_sets import ld_expand_all_control_snps
 from check_ld_expanded_control_sets import check_ld_expanded_sets
 from intersect_annotation import intersect_all_annotations
 from helper_general import start_logger, safe_mkdir
@@ -37,13 +36,62 @@ master_start = time.time()
 
 
 ###
+###    inputs and outputs
+###
+
+
+parser = argparse.ArgumentParser(description='Get evolutionary signatures using GWAS summary stats.')
+
+### REQUIRED ARGUMENTS IN ORDER
+parser.add_argument('analysis_name', action='store', type=str, help='name of this analysis')
+parser.add_argument('gwas_summary_file', action='store', type=str, help='full path to gwas gwas_summary_file')
+parser.add_argument('outputpath', action='store', type=str, help='full path to write outputs; output directory will be named according to analysis_name')
+
+
+
+#retrieve passed arguments
+args = parser.parse_args()
+analysis_name = args.analysis_name
+gwas_summary_file = args.gwas_summary_file
+outputpath = args.outputpath
+
+outputdir=os.path.join(outputpath, analysis_name)
+
+
+
+
+
+
+###
+###    selection pipeline paramters
+###
+
+num_control_sets = 5 # number of MAF and LD matched control snps
+
+lead_snp_min_gwas_pvalue=0.00000005 # SNPs with GWAS p-value lower than this will be considered to identify potential lead snps
+ld_snps_min_gwas_pvalue=0.00000005  # only SNPs with GWAS p-value lower than this will be considered to be in LD with the lead SNPs
+min_r2_to_clump=0.1                 # the r2 threshold used to identify independent GWAS regions (snps with r2 greater than this will be clumped together)
+min_kb_from_index_to_clump=500      # the kb threshold used to identify independent GWAS regions
+ld_expand_lead_snp_min_r2=0.9       # for matching, this is the r2 threshold to which we ld expand the lead snp
+
+ldbuds_r2_threshold="friends_ld09"  # for snpsnap, the r2 threshold used to determine the number of LD buddies
+control_snps_ld_expand_r2=0.9       # r2 threshold to ld expand the control snps
+
+ld_thresholds = ['ld<=1.0']         # ld threshold to create matched control regions (must be in the form "ld<=1.0" or ["ld<=1.0","ld<=0.9"] if expanding to 0.8<r2≤1.
+summary_type='max'                  # how to summarize the evolutionar nanotation over genomic regions (accepts min, max, median, mean)
+
+
+
+
+###
 ###    dependecies
 ###
 
-analysis_name ="test"
-snpsnap_db_file="/dors/capra_lab/projects/gwas_allele_age_evolution/data/snpsnap_database/raw_download/eur/ld0.9_collection.tab.gz"
-thous_gen_file = '/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/1kg/EUR.chr{}.phase3.nodups'
-anno_dir="/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/create_annotations/anno_dict"
+
+snpsnap_db_file="snpsnap_database/ld0.9_collection.tab.gz"
+thous_gen_file = '1kg/EUR.chr{}.phase3.nodups'
+anno_dir="create_annotations/anno_dict"
+
 
 anno_path_dict = {'argweave':      os.path.join(anno_dir, 'argweave_snpsnap_eur_ld0.1_collection.pickle'),
                 'betascore':       os.path.join(anno_dir, 'betascore_snpsnap_eur_ld0.1_collection.pickle'),
@@ -76,37 +124,12 @@ two_sided_bool_dict = {'argweave': True,
 
 
 ###
-###    inputs and outputs
-###
-
-gwas_summary_file="/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/test/input_data/bmi_small.test" # gwas file
-outputdir=f"/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/dev_{analysis_name}"
-safe_mkdir(outputdir)
-
-
-###
-###    selection pipeline paramters
-###
-
-num_control_sets = 5
-lead_snp_min_gwas_pvalue=0.00000005
-ld_snps_min_gwas_pvalue=0.00000005
-min_r2_to_clump=0.1
-min_kb_from_index_to_clump=500
-ld_expand_lead_snp_min_r2=0.9
-
-ldbuds_r2_threshold="friends_ld09"
-control_snps_ld_expand_r2=0.9
-
-ld_thresholds = ['ld<=1.0']
-summary_type='max'
-
-###
 ###    start logger
 ###
-
+safe_mkdir(outputdir)
 logfile=os.path.join(outputdir,f"{analysis_name}.log")
 logger = start_logger(logfile)
+
 
 # -----------
 #  START PIPELINE
