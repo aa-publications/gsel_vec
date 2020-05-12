@@ -17,7 +17,7 @@ import pandas as pd
 from functools import partial
 from multiprocessing import Pool, cpu_count
 
-sys.path.append('/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec')
+# sys.path.append('/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec')
 from clump_snps import clump_snps, clump_snp_list
 from match_snps import match_snps
 from get_ldsnps_for_control_snps import get_ldsnps_for_control_snps
