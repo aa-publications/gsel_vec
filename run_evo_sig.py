@@ -17,7 +17,7 @@ import pandas as pd
 from functools import partial
 from multiprocessing import Pool, cpu_count
 
-# sys.path.append('/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec')
+
 from clump_snps import clump_snps, clump_snp_list
 from match_snps import match_snps
 from get_ldsnps_for_control_snps import get_ldsnps_for_control_snps
@@ -69,7 +69,7 @@ outputdir=os.path.join(outputpath, analysis_name)
 num_control_sets = 5 # number of MAF and LD matched control snps
 
 lead_snp_min_gwas_pvalue=0.00000005 # SNPs with GWAS p-value lower than this will be considered to identify potential lead snps
-ld_snps_min_gwas_pvalue=0.00000005  # only SNPs with GWAS p-value lower than this will be considered to be in LD with the lead SNPs
+ld_snps_min_gwas_pvalue=0.005  # only SNPs with GWAS p-value lower than this will be considered to be in LD with the lead SNPs
 min_r2_to_clump=0.1                 # the r2 threshold used to identify independent GWAS regions (snps with r2 greater than this will be clumped together)
 min_kb_from_index_to_clump=500      # the kb threshold used to identify independent GWAS regions
 ld_expand_lead_snp_min_r2=0.9       # for matching, this is the r2 threshold to which we ld expand the lead snp
@@ -129,7 +129,30 @@ two_sided_bool_dict = {'argweave': True,
 safe_mkdir(outputdir)
 logfile=os.path.join(outputdir,f"{analysis_name}.log")
 logger = start_logger(logfile)
+logger.debug(
+f"""
 
+Settings for this run: 
+---- Inputs/Outputs ---
+gwas summary file: {gwas_summary_file}
+output directory: {outputpath}
+
+---- Parameters ---
+num_control_sets: {num_control_sets}
+lead_snp_min_gwas_pvalue: {lead_snp_min_gwas_pvalue}
+ld_snps_min_gwas_pvalue: {ld_snps_min_gwas_pvalue}
+min_r2_to_clump: {min_r2_to_clump}
+min_kb_from_index_to_clump: {min_kb_from_index_to_clump}
+ld_expand_lead_snp_min_r2: {ld_expand_lead_snp_min_r2}
+ldbuds_r2_threshold: {ldbuds_r2_threshold}
+control_snps_ld_expand_r2: {control_snps_ld_expand_r2}
+ld_thresholds: {ld_thresholds}
+summary_type: {summary_type}
+
+""")
+
+# create a record of parameters for this run 
+# TO DO. 
 
 # -----------
 #  START PIPELINE
