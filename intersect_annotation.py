@@ -151,7 +151,7 @@ def intersect_annotation(anno_label_path_pair, matched_file, two_sided_bool_dict
     return {'anno_label':anno_label, 'summary_by_df':summary_by_df,
             'summary_by_pval_df':summary_by_pval_df, 'summary_by_zscore_df':summary_by_z_score_df,
             'summary_type':summary_type,
-            'pooled_overlap': pooled_overlap_df, 'by_control_set_overlap':by_control_set_overlap_df}
+            'pooled_overlap': pooled_overlap_df, 'by_control_set_overlap':by_control_set_overlap_df, 'annotation_long_df':long_df}
 
 def set_up_outputs(OutputObj, anno_label_list, summary_type):
 
@@ -176,6 +176,8 @@ def set_up_outputs(OutputObj, anno_label_list, summary_type):
                                 'pvalue_{}_per_lead_snp.tsv'.format(anno_label), custom_root=anno_root)
         OutputObj.add_output('{}_zscore'.format(anno_label),
                                 'zscore_{}_per_lead_snp.tsv'.format(anno_label), custom_root=anno_root)
+        OutputObj.add_output('{}_annotation_values'.format(anno_label),
+                                '{}_annotation_values.tsv'.format(anno_label), custom_root=anno_root)
 
         OutputObj.add_output('{}_enrichment_summary'.format(anno_label),
                                 '{}_enrichment_summary.tsv'.format(anno_label), custom_root=anno_root)
@@ -362,6 +364,7 @@ def intersect_all_annotations(anno_path_dict, two_sided_bool_dict, summary_type,
         summary_type = anno_result['summary_type']
         pooled_overlap_df = anno_result['pooled_overlap']
         by_control_set_overlap = anno_result['by_control_set_overlap']
+        annotation_long_df = anno_result['annotation_long_df']
 
         # mean_pvalue_df = anno_result['mean_pval_df']
         # mean_zscore_df = anno_result['mean_zscore_df']
@@ -393,7 +396,9 @@ def intersect_all_annotations(anno_path_dict, two_sided_bool_dict, summary_type,
         summary_by_zscore_df.to_csv(OutObj.get('{}_zscore'.format(anno_label)) , sep="\t", index=False, na_rep="NaN")
         summary_by_zscore_df['summary_type_over_input_region']=summary_type
 
-
+        # write long df of annotation value
+        annotation_long_df.to_csv(OutObj.get('{}_annotation_values'.format(anno_label)), sep="\t", index=False, na_rep="NaN")
+        
 
 
     logger.info(f"Wrote annotaiton intersection to: {output_dir}")
