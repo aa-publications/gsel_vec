@@ -7,6 +7,7 @@ This pipeline will detect evolutionary signatures from GWAS summary statistics.
     - "snpsnap_database" - [link (2.4 GB)](https://drive.google.com/drive/folders/1P9r9axKakwY20eD_f3NCoRY0g1aLcp2T?usp=sharing)
     - "1kg" - [link (1.5 GB)](https://drive.google.com/drive/folders/1yjp31LhZSi2Ftu_QmgKDKevLqHKJTH-0?usp=sharing)
     - "anno_dict" - [link (4.1 GB)](https://drive.google.com/drive/folders/1dps7iWshulKKEukxCdBu6MTy3j2s8KCj?usp=sharing)
+        - place inside the create_annotations/ folder
 
 2) Install conda environment to run scripts.
 
