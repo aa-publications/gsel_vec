@@ -208,12 +208,22 @@ def create_pval_zscore_df(summary_df, anno_label, two_sided_bool_dict):
     pval_df = summary_df.apply(partial_pval, axis=1, result_type='expand')
     pval_df.columns = ['lead_snp','pvalue', 'test_type', 'lead_snp_anno', 'input_percentile', 'num_control_snps']
 
-
+    
+    # calc_pval_and_summary(values, control_cols, two_tailed_bool)
 
     no_na_pval_df = pval_df[~pval_df.isnull().any(1)].copy()
     na_pval_lead_snps = pval_df.loc[pval_df.isnull().any(1), 'lead_snp'].values.tolist()
 
     pvalues = no_na_pval_df.pvalue
+    
+    
+    # If no SNPs exists, return only nan snps
+    if (no_na_pval_df.shape[0] == 0): 
+        na_df = pd.DataFrame({'lead_snp':na_pval_lead_snps, 'pvalue':np.nan, 'test_type':np.nan, 'lead_snp_anno':np.nan, 'input_percentile':np.nan, 'num_control_snps':np.nan,
+                       'reject_h0_benj_hoch':np.nan,
+                       'corrected_pval_benj_hoch':np.nan})
+
+        return na_df, z_score_df
 
     # multiple testing correction: bonferroni
     # hypo_reject_bonfer, pval_corrected_bonfer, _, _ = multipletests(pvalues, alpha=0.05, method='bonferroni')
@@ -253,6 +263,15 @@ def calc_pval_and_summary(values, control_cols, two_tailed_bool):
 
     control_snp_values = values[control_cols]
     na_removed_control_values = control_snp_values[~control_snp_values.isnull()]
+    
+    
+    # if input_snp_value OR if there are no non-na contorl snps
+    if np.isnan(input_snp_value) or (len(na_removed_control_values)==0): 
+
+        summary = [lead_snp, np.nan, np.nan, input_snp_value, np.nan, len(na_removed_control_values)]
+
+        return summary
+
 
     # A percentileofscore of 80% means that 80% of values are less than or equal to the provided score.
     input_percentile = stats.percentileofscore(na_removed_control_values, input_snp_value,  kind='weak')
@@ -285,7 +304,6 @@ def calc_pval_and_summary(values, control_cols, two_tailed_bool):
 
 
     num_control_snps = len(na_removed_control_values)
-
 
 
     summary = [lead_snp, pval, test_type, input_snp_value, input_percentile, num_control_snps]
@@ -344,6 +362,8 @@ def intersect_all_annotations(anno_path_dict, two_sided_bool_dict, summary_type,
     pool = Pool(processes=1, maxtasksperchild=1)
     partial_intersect_anno = partial(intersect_annotation, matched_file=matched_file, two_sided_bool_dict=two_sided_bool_dict, summary_type=summary_type)
 
+
+
     # create label: filepath dictionary pairs
     anno_label_paths_pairs = [(anno_label,anno_path) for anno_label, anno_path in anno_path_dict.items()]
     intersect_ouputs = pool.map(partial_intersect_anno, anno_label_paths_pairs)
@@ -365,13 +385,6 @@ def intersect_all_annotations(anno_path_dict, two_sided_bool_dict, summary_type,
         pooled_overlap_df = anno_result['pooled_overlap']
         by_control_set_overlap = anno_result['by_control_set_overlap']
         annotation_long_df = anno_result['annotation_long_df']
-
-        # mean_pvalue_df = anno_result['mean_pval_df']
-        # mean_zscore_df = anno_result['mean_zscore_df']
-        # median_pvalue_df = anno_result['median_pval_df']
-        # median_zscore_df = anno_result['median_zscore_df']
-
-
 
         combined_df = pd.merge( pd.merge(by_control_set_overlap.loc[:, ['lead_snp','mean_prop','std_prop']],
                     summary_by_df.loc[:, ['lead_snp','lead_snp_anno']], on='lead_snp', how='outer'),
