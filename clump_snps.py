@@ -82,15 +82,19 @@ def parse_log_for_err(plink_clump_output_dir, missing_snps_file, plink_log_error
     return store_errors, store_missing_variants
 
 def concat_plink_clump_output(plink_clump_output_dir):
+    
     store_clump_df = pd.DataFrame()
     for thisclump in glob.glob(plink_clump_output_dir+"/chr*.clumped"):
 
         clump_df = pd.read_csv(thisclump, sep="\s+")
         store_clump_df = store_clump_df.append(clump_df)
 
+    if store_clump_df.shape[0] == 0: 
+        raise RuntimeError(f'Plink clumped outputs file are empty...')
+
     # format and write concatenated clump file
     store_clump_df['CHR_BP'] = store_clump_df['CHR'].map(str) + ":" + store_clump_df['BP'].map(str)
-
+    
     return store_clump_df
 
 def parse_input_args():
@@ -102,7 +106,6 @@ def parse_input_args():
         gwas_summary_file = "test_data/input_gwas_file.tsv"
         output_root= os.getcwd()
     else:
-
 
         parser = argparse.ArgumentParser(description='Will LD clump from GWAS summary stats.')
 
