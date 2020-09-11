@@ -1,6 +1,7 @@
 # Evolutionary signatures from GWAS
-This pipeline will detect evolutionary signatures from GWAS summary statistics.
-Note: this pipeline is currently under development. I hope to finish a complete push very soon. 
+"This pipeline detects enrichment and depletion of evolutionary signatures among sets of GWAS summary statistics."
+**Note: this pipeline is currently under development. A complete push with more documentation and examples will be made very soon.**
+Please contact me if you have nay questions. 
 
 
 **Dependencies:**
