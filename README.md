@@ -2,9 +2,9 @@
 This pipeline detects enrichment and depletion of evolutionary signatures from GWAS summary statistics.<br>
 **Note: this pipeline is currently under development.**
 
-**Required Software:**  
-a) [Python 3.6](https://www.python.org/downloads/release/python-360/)   
-b) [PLINK 1.90 beta](https://www.cog-genomics.org/plink2)
+**Required Software:** 
+1) [Python 3.6](https://www.python.org/downloads/release/python-360/)   
+2) [PLINK 1.90 beta](https://www.cog-genomics.org/plink2)
 
 **Required Data**   
 1) Download both folders to the `gsel_vec` directory.  
