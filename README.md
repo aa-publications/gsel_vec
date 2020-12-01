@@ -23,6 +23,7 @@ a) "anno_dict" [link (4.1 GB)](https://drive.google.com/drive/folders/1dps7iWshu
 **Pass these required arguments (in this order) to run_evo_sig.py**  <br>1) **analysis_name:** a string without spaces describing the name of the analysis <br> 2) **gwas_summary_file:** full path to gwas summary statistics file <br> 3) **outputpath:** full path to create output directory (with the same name as "analysis_name"
 
 **GWAS summary statistics file format:**<br>- should be a tab separated file with one row per SNP <br>- coordinates should be in GRChg37<br>- should have the following headers in this order: ['snp', 'chr', 'pos', 'p']
+__TODO: provide example. does chr need 'chr1', or '1'?
 
 
 ## Example
