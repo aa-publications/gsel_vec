@@ -99,9 +99,9 @@ summary_type = "max"
 # DEPENDENCIES
 # -----------
 
-snpsnap_db_file = "data/snpsnap_database/ld0.9_collection.tab.gz"
-thous_gen_file = "data/1kg/EUR.chr{}.phase3.nodups"
-anno_dir = "data/anno_dict"
+snpsnap_db_file = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/snpsnap_database/ld0.9_collection.tab.gz"
+thous_gen_file = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/1kg/EUR.chr{}.phase3.nodups"
+anno_dir = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/anno_dict"
 
 
 anno_path_dict = {
