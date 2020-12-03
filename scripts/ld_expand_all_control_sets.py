@@ -498,6 +498,10 @@ def ld_expand_all_control_snps(
         inplace=True,
     )
 
+    if gwas_lead_ld_df.shape[0] == 0:
+        sys.exit("No lead snps left to match after intersection with the snpsnap database.")
+
+
     # ensure every matched_lead_snp has at least a row with r2==1
     clean_lead_ld_df = format_gwas_lead_and_ld_snps(gwas_lead_ld_df, matched_lead_snps)
     del gwas_lead_ld_df
