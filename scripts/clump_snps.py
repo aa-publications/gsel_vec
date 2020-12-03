@@ -244,32 +244,31 @@ def clump_snps(gwas_summary_file, output_root, thous_gen_file, lead_snp_min_gwas
     ##
 
 
-    gwas_df = pd.read_csv(gwas_summary_file, sep="\t")
+    raw_gwas_df = pd.read_csv(gwas_summary_file, sep="\t")
 
-    gwas_df.to_csv(OutObj.get('reprint_gwas_file'), sep="\t", index=False)  # write a copy of the input data
-    logger.info(f"Loaded GWAS summary stats with {gwas_df.shape[0]} rows.")
+    raw_gwas_df.to_csv(OutObj.get('reprint_gwas_file'), sep="\t", index=False)  # write a copy of the input data
+    logger.info(f"Loaded GWAS summary stats with {raw_gwas_df.shape[0]} rows.")
 
     # write input snps by chromosome
     logger.debug(f"Splitting GWAS summary stats by chromosome.")
     gwasfilename = os.path.split(gwas_summary_file)[1]
 
 
+
+
+
+
     ###
     ###    error check gwas summary stats
     ###
 
-    # check if for non-autosomal chromosomes and wrong chromosome format
-    if not np.all([chrm in list(np.arange(1,23)) for chrm in gwas_df.chr.unique().tolist()]):
-        sys.exit("GWAS summary stats file had non-autosomal chromosomes OR did not match required format.")
+    # check for duplicate positions based on chr and pos
+    dup_rows = raw_gwas_df.duplicated(subset=['chr','pos'], keep='first')
+    gwas_df = raw_gwas_df.loc[~dup_rows].copy()
+    logger.info(f"{np.sum(dup_rows)} duplciated variants (based on chr and pos) were removed") if np.any(dup_rows) else None
 
-
-    temp_gwas_df = gwas_df.copy()
-    temp_gwas_df['chr_pos'] = gwas_df['chr'].map(str) + ":" + gwas_df['pos'].map(str)
-    if (temp_gwas_df.chr_pos.duplicated(keep=False).sum() > 0):
-        sys.exit("GWAS summary stats file had duplicated snps based on their chromosome and position.")
-
-    del temp_gwas_df
-
+    # remove rows whose chromosome is not 1 through 22
+    gwas_df = gwas_df.loc[gwas_df['chr'].isin(np.arange(1,23)), :].copy()
 
 
     ##
