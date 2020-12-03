@@ -29,9 +29,9 @@ import pandas as pd
 from subprocess import Popen, PIPE
 
 
-from helper_calc_r2 import calc_r2_for_input_snps, calc_r2_among_snps_in_snp_list, ld_expand_snp_list #pylint:E0401
-from helper_general import Outputs, error_check_plink_run, warning_check_plink_run
-from helper_clump_snps import write_gwas_sumstats_by_chr, get_list_of_ld_snps, get_r2_for_lead_ld_snps, bin_ldsnp_per_leadsnp, write_snp_list_by_chr
+from .helper_calc_r2 import calc_r2_for_input_snps, calc_r2_among_snps_in_snp_list, ld_expand_snp_list #pylint:E0401
+from .helper_general import Outputs, error_check_plink_run, warning_check_plink_run
+from .helper_clump_snps import write_gwas_sumstats_by_chr, get_list_of_ld_snps, get_r2_for_lead_ld_snps, bin_ldsnp_per_leadsnp, write_snp_list_by_chr
 
 tstart = time.time()
 
@@ -82,19 +82,19 @@ def parse_log_for_err(plink_clump_output_dir, missing_snps_file, plink_log_error
     return store_errors, store_missing_variants
 
 def concat_plink_clump_output(plink_clump_output_dir):
-    
+
     store_clump_df = pd.DataFrame()
     for thisclump in glob.glob(plink_clump_output_dir+"/chr*.clumped"):
 
         clump_df = pd.read_csv(thisclump, sep="\s+")
         store_clump_df = store_clump_df.append(clump_df)
 
-    if store_clump_df.shape[0] == 0: 
+    if store_clump_df.shape[0] == 0:
         raise RuntimeError(f'Plink clumped outputs file are empty...')
 
     # format and write concatenated clump file
     store_clump_df['CHR_BP'] = store_clump_df['CHR'].map(str) + ":" + store_clump_df['BP'].map(str)
-    
+
     return store_clump_df
 
 def parse_input_args():

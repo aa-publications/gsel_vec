@@ -26,7 +26,7 @@ import pandas as pd
 from subprocess import Popen, PIPE
 
 
-from helper_general import Outputs, safe_mkdir, error_check_plink_run, warning_check_plink_run
+from .helper_general import Outputs, safe_mkdir, error_check_plink_run, warning_check_plink_run
 
 
 import logging
