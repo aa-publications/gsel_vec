@@ -439,6 +439,10 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
         all_lead_snps, keep_anno_df, OutObj.get("excluded_snps_file")
     )
 
+
+    if len(snps_to_match) == 0:
+        sys.exit('No snps are left for matching...')
+
     # calculate thresholds for max deviation from properties allowed
     thresholds = set_thresholds(
         max_dev_maf=0.05,
@@ -528,7 +532,7 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
     final_matched_df = raw_final_matched_df.loc[
         ~raw_final_matched_df["snps_to_match"].isin(snps_to_remove)
     ].copy()
-    
+
     final_matched_df.rename(
         columns={"snps_to_match": "lead_snp"}, inplace=True
     )  # necessary for downstream analysis
