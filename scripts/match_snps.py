@@ -23,7 +23,6 @@ from .helper_general import Outputs, report_mem
 
 
 import logging
-
 logger = logging.getLogger("main.{}".format(__name__))
 
 DATE = datetime.now().strftime("%Y-%m-%d")
@@ -360,7 +359,7 @@ def write_match_quality(
     )
 
     match_qual_df.to_csv(quality_score_file, sep="\t", index=False)
-    print("Wrote match quality per snp to: {}".format(quality_score_file))
+    # print("Wrote match quality per snp to: {}".format(quality_score_file))
 
     # calc insuff and median match proportion
     insuff_matches_percent = (

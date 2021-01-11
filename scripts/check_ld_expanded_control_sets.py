@@ -506,7 +506,7 @@ def check_ld_expanded_sets(
     combined_summary_df.to_csv(
         OutObj.get("lead_snps_matching_quality_file"), sep="\t", index=False
     )
-    logger.info(
+    logger.debug(
         "Wrote summary of matching quality to: {}".format(
             OutObj.get("lead_snps_matching_quality_file")
         )
@@ -564,7 +564,7 @@ def check_ld_expanded_sets(
     summary_coverage_df.to_csv(
         OutObj.get("ldsnp_coverage_by_input_snp"), sep="\t", index=False
     )
-    logger.info(
+    logger.debug(
         "Wrote summary of ld SNP coverage to: {}".format(
             OutObj.get("ldsnp_coverage_by_input_snp")
         )
@@ -614,7 +614,7 @@ def check_ld_expanded_sets(
         sep="\t",
         index=False,
     )
-    logger.info(
+    logger.debug(
         "Wrote LDscore summary to: {}".format(
             OutObj.get("ldscore_for_expanded_control_sets_quality_file")
         )
@@ -625,7 +625,11 @@ def check_ld_expanded_sets(
         )
     )
 
-    return combined_summary_df, lead_control_ldscore_df
+    # combined_summary_df --> match summary across matching parameters
+    # lead_control_ldscore_df --> lead snps and ld snps summary
+    # summary_coverage_df --> matching quality per lead snps
+
+    return combined_summary_df, lead_control_ldscore_df, summary_coverage_df
 
 
 # -----------

@@ -30,7 +30,10 @@ from scripts.helper_general import safe_mkdir, start_logger
 from scripts.intersect_annotation import intersect_all_annotations
 from scripts.ld_expand_all_control_sets import ld_expand_all_control_snps
 from scripts.match_snps import match_snps
-
+from scripts.helper_calc_genome_distribution_of_annotations import calc_genome_distribution_of_annotations
+from scripts.calc_trait_enrichment import calc_trait_entrichment
+from scripts.organize_final_outputs import organize_final_outputs
+from scripts.make_output_plots import make_output_plots
 master_start = time.time()
 
 parser = argparse.ArgumentParser(
@@ -83,8 +86,8 @@ print(f"Outputs saved to: {outputdir}")
 
 
 num_control_sets = 5000
-lead_snp_min_gwas_pvalue = 0.0005
-ld_snps_min_gwas_pvalue = 0.05
+lead_snp_min_gwas_pvalue = 0.00000005
+ld_snps_min_gwas_pvalue = 0.00000005
 min_r2_to_clump = 0.1
 min_kb_from_index_to_clump = 500
 ld_expand_lead_snp_min_r2 = 0.9
@@ -102,6 +105,7 @@ summary_type = "max"
 snpsnap_db_file = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/snpsnap_database/ld0.9_collection.tab.gz"
 thous_gen_file = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/1kg/EUR.chr{}.phase3.nodups"
 anno_dir = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/anno_dict"
+anno_summary_dir = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/anno_genome_summary"
 
 
 anno_path_dict = {
@@ -161,8 +165,15 @@ two_sided_bool_dict = {
 # START LOGGER
 # -----------
 
-
+# TO DO: exit program if output dir already exists. ask for a different name  
 safe_mkdir(outputdir)
+
+intermediate_dir = os.path.join(outputdir, 'intermediate_analyses')
+final_output_dir = os.path.join(outputdir, 'final_outputs')
+
+safe_mkdir(intermediate_dir)
+safe_mkdir(final_output_dir)
+
 logfile = os.path.join(outputdir, f"{analysis_name}.log")
 logger = start_logger(logfile)
 logger.debug(
@@ -196,7 +207,7 @@ summary_type: {summary_type}
 # clump snps based on LD
 OutObj = clump_snps(
     gwas_summary_file,
-    outputdir,
+    intermediate_dir,
     thous_gen_file,
     lead_snp_min_gwas_pvalue=lead_snp_min_gwas_pvalue,
     ld_snps_min_gwas_pvalue=ld_snps_min_gwas_pvalue,
@@ -212,14 +223,14 @@ match_OutObj = match_snps(
     num_control_sets,
     ldbuds_r2_threshold,
     snpsnap_db_file,
-    outputdir,
+    intermediate_dir,
 )
 
 
 # get ld snps for control snps
 csnps_file = match_OutObj.get("matched_snps_file")
 ldexp_OutObj = get_ldsnps_for_control_snps(
-    csnps_file, thous_gen_file, outputdir, control_snps_ld_expand_r2
+    csnps_file, thous_gen_file, intermediate_dir, control_snps_ld_expand_r2
 )
 
 
@@ -234,7 +245,7 @@ ldexp_match_OutObj = ld_expand_all_control_snps(
     gwas_snps_r2_file,
     matched_file,
     control_ld_dir,
-    outputdir,
+    intermediate_dir,
     ld_thresholds=ld_thresholds,
 )
 
@@ -242,24 +253,41 @@ ldexp_match_OutObj = ld_expand_all_control_snps(
 # check ld expanded control sets
 ld_expanded_control_sets_file = ldexp_match_OutObj.get("ld_expanded_output")
 ld_expanded_control_sets_r2_file = ldexp_match_OutObj.get("ld_r2_expanded_output")
-combined_summary_df, mean_sd_ldscore_df = check_ld_expanded_sets(
+match_summary_by_params_df, ldscore_lead_and_ld_df, match_quality_per_lead_snp_df = check_ld_expanded_sets(
     snpsnap_db_file,
     ld_expanded_control_sets_file,
     lead_snps_ld_counts_file,
     ld_expanded_control_sets_r2_file,
     ldbuds_r2_threshold,
-    outputdir,
+    intermediate_dir,
 )
 
 
 # intersect annotation
-intersect_ouputs = intersect_all_annotations(
+intersectAnnoOutputObj = intersect_all_annotations(
     anno_path_dict,
     two_sided_bool_dict,
     summary_type,
     ld_expanded_control_sets_file,
-    outputdir,
+    intermediate_dir,
 )
+
+
+
+# calculate genome wide summary of annotations
+anno_genom_summary_file = calc_genome_distribution_of_annotations(anno_path_dict, anno_summary_dir)
+
+# calculate trait-wide enrichment
+TraitEnrichOutObj = calc_trait_entrichment(intersectAnnoOutputObj, anno_genom_summary_file, anno_path_dict, intermediate_dir)
+
+
+finalOutObj = organize_final_outputs(intersectAnnoOutputObj, anno_path_dict, match_quality_per_lead_snp_df, match_summary_by_params_df, ldbuds_r2_threshold, final_output_dir)
+
+
+# # # make output plots
+intersect_ouputs = make_output_plots(intersectAnnoOutputObj, TraitEnrichOutObj,
+                                        anno_path_dict,
+                                        final_output_dir)
 
 
 logger.info(

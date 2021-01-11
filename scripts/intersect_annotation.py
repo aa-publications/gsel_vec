@@ -234,7 +234,6 @@ def set_up_outputs(OutputObj, anno_label_list, summary_type):
 
         # for each type of annotation, have one directory
         OutputObj.add_output(anno_label, anno_label, mkdir=True, add_root=True)
-
         anno_root = os.path.join(OutputObj.root_dir, anno_label)
 
         # within that dir,  set up ouput files
@@ -408,6 +407,7 @@ def calc_pval_and_summary(values, control_cols, two_tailed_bool):
     # modify pval calc based on one tailed or two tailed test; have a default also
     if two_tailed_bool:
 
+
         pval = np.sum(na_removed_control_values >= input_snp_value) / len(
             na_removed_control_values
         )
@@ -426,11 +426,6 @@ def calc_pval_and_summary(values, control_cols, two_tailed_bool):
         )
         test_type = "greater-than"
 
-    # old way of doing on
-    # if np.isnan(input_snp_value):
-    #     pval=np.nan
-    # else:
-    #     pval = np.sum(na_removed_control_values > input_snp_value)/len(na_removed_control_values)
 
     num_control_snps = len(na_removed_control_values)
 
@@ -510,7 +505,7 @@ def intersect_all_annotations(
     pool.close()
     pool.join()
     logger.info(
-        "Done *bulk* intersection off annotations. Took {:.2f} minutes. Unpacking intersection... ".format(
+        "Done *bulk* intersection off annotations. Took {:.2f} minutes. Unpacking intersections ... ".format(
             (time.time() - mstart) / 60
         )
     )
@@ -598,9 +593,9 @@ def intersect_all_annotations(
             na_rep="NaN",
         )
 
-    logger.info(f"Wrote annotaiton intersection to: {output_dir}")
+    logger.debug(f"Wrote annotaiton intersection to: {output_dir}")
     logger.info(
         f"Done intersecting with annotations. Took { (time.time()-intersect_start)/60 :.2f} minutes."
     )
 
-    return intersect_ouputs
+    return OutObj

@@ -826,7 +826,7 @@ def ld_expand_all_control_snps(
     dedup_r2_df.to_csv(
         OutObj.get("ld_r2_expanded_output"), sep="\t", index=False, na_rep="None"
     )
-    logger.info(
+    logger.debug(
         "Wrote expanded control snps to {}".format(OutObj.get("ld_expanded_output"))
     )
     logger.info(
