@@ -278,7 +278,7 @@ def get_matched_snps(snp_to_match, n_matches, anno_df, thresholds):
     except ValueError as e:
         print(f"Value Errors in get_matched_snps while on {snp_to_match}")
 
-    logger.info(
+    logger.debug(
         "\tmatching {}. PID {}.Took {:.2f} minutes.".format(
             snp_to_match, current_process().pid, (time.time() - start) / 60
         )

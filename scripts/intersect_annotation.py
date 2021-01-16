@@ -486,7 +486,7 @@ def intersect_all_annotations(
     num_threads = cpu_count()
     mstart = time.time()
     num_processes = 4
-    logger.info("\tUsing {:,} cores".format(num_processes))
+    logger.debug("\tUsing {:,} cores".format(num_processes))
     # pool = Pool(processes=num_processes, maxtasksperchild=10)
     pool = Pool(processes=1, maxtasksperchild=1)
     partial_intersect_anno = partial(
@@ -504,7 +504,7 @@ def intersect_all_annotations(
 
     pool.close()
     pool.join()
-    logger.info(
+    logger.debug(
         "Done *bulk* intersection off annotations. Took {:.2f} minutes. Unpacking intersections ... ".format(
             (time.time() - mstart) / 60
         )

@@ -121,8 +121,8 @@ def organize_final_outputs(intersectAnnoOutputObj, anno_path_dict, match_quality
 
         # I assume the two merging dataframes have the same lead snps
         zscore_pval_df = pd.merge(this_anno_pval_df, this_anno_zscore_df, on='lead_snp', how='inner')
-        temp_include_df = pd.merge(zscore_pval_df, this_anno_pval_df, on='lead_snp', how='inner')
-        temp_include_df =  pd.merge(temp_include_df, this_anno_cover_df.loc[:, ['lead_snp','anno_coverage_include']], on='lead_snp', how='inner')
+        # temp_include_df = pd.merge(zscore_pval_df, this_anno_pval_df, on='lead_snp', how='inner')
+        temp_include_df =  pd.merge(zscore_pval_df, this_anno_cover_df.loc[:, ['lead_snp','anno_coverage_include']], on='lead_snp', how='inner')
         temp_include_df =  pd.merge(temp_include_df, match_quality_per_lead_snp_df.loc[:, ['lead_snp','prop_match_include']], on='lead_snp', how='inner')
         zscore_pval_flags_df =  pd.merge(temp_include_df, match_summary_by_params_df.loc[:, ['lead_snp','param_match_include']], on='lead_snp', how='inner')
 

@@ -585,7 +585,7 @@ def check_ld_expanded_sets(
         )
     else:
         logger.info(
-            "WARNING... there are difference chromosomes for a given set of ld expanded control snps."
+            "* WARNING: the ld expanded snps are not on the same chromosome!."
         )
 
     # -----------
@@ -606,7 +606,7 @@ def check_ld_expanded_sets(
         )
     else:
         logger.info(
-            "\tSuccessful check! LDscores for control regions are within 1S.D. of the lead regsion."
+            "Successful check! LDscores for control regions are within 1S.D. of the lead regsion."
         )
 
     lead_control_ldscore_df.to_csv(
