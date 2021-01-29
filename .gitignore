@@ -1,3 +1,4 @@
+
 # exclude everything
 gsel_vec/data/*/*
 gsel_vec/demo/*/*
@@ -8,3 +9,4 @@ gsel_vec/demo/*
 !gsel_vec/data/*/.gitkeep
 !gsel_vec/demo/input_data/.gitkeep
 !gsel_vec/demo/input_data/bmi_small.test
+!gsel_vec/demo/README
