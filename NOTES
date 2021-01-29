@@ -1,0 +1,9 @@
+TO DO:
+
+
+1. create scripts to wget required data and put them in right location
+2. set up pip install
+3. versioning?
+4. conda env for dependencies
+5. turn off interactive matplotlib
+6. test run
