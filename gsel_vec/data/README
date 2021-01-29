@@ -1,0 +1,10 @@
+This directory houses all the required data to run the evolutionary pipeline.
+It should contain the following folders:
+    * 1kg/
+        - 1000 Genomes Phase 3 after QC in PLINK1.9 format
+    * anno_dict/
+        - pickled python dictionary for each evolutionary measure
+    * anno_genome_summary/
+        - tsv file that summarizes each evolutionary annotation across the genome
+    * snpsnap_database/
+        - snpsnap database that was downloaded from their website. 
