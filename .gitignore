@@ -1,0 +1,5 @@
+# exclude everything
+gsel_vec/data/*
+
+# exception to the rule
+!gsel_vec/data/.gitkeep
