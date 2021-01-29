@@ -3,3 +3,4 @@ gsel_vec/data/*
 
 # exception to the rule
 !gsel_vec/data/.gitkeep
+!gsel_vec/data/*/.gitkeep
