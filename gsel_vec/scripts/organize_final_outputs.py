@@ -109,7 +109,7 @@ def organize_final_outputs(intersectAnnoOutputObj, anno_path_dict, match_quality
 
 
     for annotation in anno_label_list:
-
+        
 
         this_anno_pval_df = anno_pval_df.loc[anno_pval_df['annotation'] == annotation, ['lead_snp','pvalue','test_type', 'reject_h0_benj_hoch',  'corrected_pval_benj_hoch', 'annotation']].copy()
         this_anno_zscore_df = anno_zscore_df.loc[anno_zscore_df['annotation'] == annotation, ['lead_snp', 'z_score', 'lead_snp_anno', 'mean_controls']].copy()
@@ -130,7 +130,7 @@ def organize_final_outputs(intersectAnnoOutputObj, anno_path_dict, match_quality
         zscore_pval_flags_df['final_qc_include'] = zscore_pval_flags_df.loc[:, ['anno_coverage_include','prop_match_include','param_match_include']].all(1)
 
 
-        cols_to_write =['lead_snp','z_score', 'lead_snp_anno', 'mean_controls','pvalue','test_type','reject_h0_bonfer','corrected_pval_benj_hoch', 'annotation', 'final_qc_include']
+        cols_to_write =['lead_snp','z_score', 'lead_snp_anno', 'mean_controls','pvalue','test_type','reject_h0_benj_hoch','corrected_pval_benj_hoch', 'annotation', 'final_qc_include']
         to_write_df = zscore_pval_flags_df.loc[:, cols_to_write].copy()
 
 

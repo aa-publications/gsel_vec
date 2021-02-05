@@ -799,10 +799,13 @@ def ld_expand_all_control_snps(
 
     logger.debug(f"Done with all LD bins. Using {report_mem()}")
 
+
     full_df = pd.read_csv(OutObj.get("temp_ld_exp_output"), sep="\t")
-    full_r2_df = pd.read_csv(OutObj.get("temp_r2_ld_exp_output"), sep="\t")
+    full_r2_df = pd.read_csv(OutObj.get("temp_r2_ld_exp_output"), sep="\t", low_memory=False) # columns will include string "NONE"
 
     logger.debug(f"Done reading in all ld expanded data. Using {report_mem()}")
+
+
 
     dedup_df = full_df[
         ~full_df.duplicated(
@@ -817,7 +820,16 @@ def ld_expand_all_control_snps(
 
     dedup_df.replace("NONE", np.nan, inplace=True)
     dedup_r2_df.replace("NONE", np.nan, inplace=True)
+
+    # force dedup_r2 to be floats for control set columns
+    control_set_col_names = dedup_r2_df.columns[~dedup_r2_df.columns.isin(['lead_snp','ld_snp','R2','lead_snp_bool'])]
+    dedup_r2_df.loc[:, control_set_col_names] = dedup_r2_df.loc[:, control_set_col_names].apply(pd.to_numeric)
+
     logger.debug(f"Done replacing NONE with nans. Using {report_mem()}")
+
+
+
+
 
     # write
     dedup_df.to_csv(
