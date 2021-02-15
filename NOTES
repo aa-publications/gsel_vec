@@ -1,7 +1,7 @@
 TO DO:
 
 
-1. create scripts to wget required data and put them in right location
+1. create scripts to wget required data and put them in right location from figshare 
 2. set up pip install
 3. versioning?
 4. conda env for dependencies

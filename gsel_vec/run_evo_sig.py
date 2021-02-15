@@ -1,9 +1,8 @@
 #!/bin/python
-# This script will ...
 #
 #
 #
-#       TO DO: annotation paths are hard coded and if two-sided or one-sided p-values are also hard coded
+#
 #
 #
 # Abin Abraham
@@ -20,6 +19,7 @@ from functools import partial
 from multiprocessing import Pool, cpu_count
 import numpy as np
 import pandas as pd
+import pkg_resources
 
 
 from scripts.check_ld_expanded_control_sets import check_ld_expanded_sets
@@ -30,22 +30,29 @@ from scripts.helper_general import safe_mkdir, start_logger
 from scripts.intersect_annotation import intersect_all_annotations
 from scripts.ld_expand_all_control_sets import ld_expand_all_control_snps
 from scripts.match_snps import match_snps
-from scripts.helper_calc_genome_distribution_of_annotations import calc_genome_distribution_of_annotations
+from scripts.helper_calc_genome_distribution_of_annotations import (
+    calc_genome_distribution_of_annotations,
+)
 from scripts.calc_trait_enrichment import calc_trait_entrichment
 from scripts.organize_final_outputs import organize_final_outputs
 from scripts.make_output_plots import make_output_plots
+
 master_start = time.time()
+
+
+# -----------
+# Inputs and Outputs
+# -----------
 
 parser = argparse.ArgumentParser(
     description="Get evolutionary signatures using GWAS summary stats."
 )
 
-
 parser.add_argument(
     "analysis_name",
     action="store",
     type=str,
-    help="name of this analysism no spaces allowed",
+    help="name of this analysis no spaces allowed",
 )
 parser.add_argument(
     "gwas_summary_file",
@@ -57,7 +64,7 @@ parser.add_argument(
     "outputpath",
     action="store",
     type=str,
-    help="full path to create output directory named according to 'analysis_name'",
+    help="full path to create output directory named 'analysis_name'",
 )
 
 args = parser.parse_args()
@@ -66,6 +73,7 @@ gwas_summary_file = args.gwas_summary_file
 outputpath = args.outputpath
 
 outputdir = os.path.join(outputpath, analysis_name)
+anno_summary_dir = os.path.join(outputdir, "anno_genome_summary")
 print(f"Note: Will overwrite existing output files.")
 print(f"Outputs saved to: {outputdir}")
 
@@ -102,11 +110,19 @@ summary_type = "max"
 # DEPENDENCIES
 # -----------
 
-snpsnap_db_file = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/snpsnap_database/ld0.9_collection.tab.gz"
-thous_gen_file = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/1kg/EUR.chr{}.phase3.nodups"
-anno_dir = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/anno_dict"
-anno_summary_dir = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/anno_genome_summary"
+# data_path = pkg_resources.resource_filename("gsel_vec", "data/")
+data_path = "./data"
 
+
+snpsnap_db_file = os.path.join(data_path, "snpsnap_database/ld0.9_collection.tab.gz")
+thous_gen_file = os.path.join(data_path, "1kg/EUR.chr{}.phase3.nodups")
+anno_dir = os.path.join(data_path, "anno_dict")
+
+
+# snpsnap_db_file = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/snpsnap_database/ld0.9_collection.tab.gz"
+# thous_gen_file = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/1kg/EUR.chr{}.phase3.nodups"
+# anno_dir = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/anno_dict"
+# anno_summary_dir = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/anno_genome_summary"
 
 anno_path_dict = {
     "argweave": os.path.join(anno_dir, "argweave_snpsnap_eur_ld0.1_collection.pickle"),
@@ -142,6 +158,10 @@ anno_path_dict = {
     "xpehh_eas_eur": os.path.join(
         anno_dir, "xpehh_eas_eur_snpsnap_eur_ld0.1_collection.pickle"
     ),
+    "geva_allele_age": os.path.join(
+        anno_dir, "geva_allele_age_snpsnap_eur_ld0.1_collection.pickle"
+    ),
+    "B2": os.path.join(anno_dir, "B2_snpsnap_eur_ld0.1_collection.pickle"),
 }
 
 two_sided_bool_dict = {
@@ -158,6 +178,9 @@ two_sided_bool_dict = {
     "xpehh_afr2_eas": False,
     "xpehh_afr2_eur": False,
     "xpehh_eas_eur": False,
+    "xpehh_eas_eur": False,
+    "geva_allele_age": True,
+    "B2": False,
 }
 
 
@@ -165,11 +188,11 @@ two_sided_bool_dict = {
 # START LOGGER
 # -----------
 
-# TO DO: exit program if output dir already exists. ask for a different name  
+# TO DO: exit program if output dir already exists. ask for a different name
 safe_mkdir(outputdir)
 
-intermediate_dir = os.path.join(outputdir, 'intermediate_analyses')
-final_output_dir = os.path.join(outputdir, 'final_outputs')
+intermediate_dir = os.path.join(outputdir, "intermediate_analyses")
+final_output_dir = os.path.join(outputdir, "final_outputs")
 
 safe_mkdir(intermediate_dir)
 safe_mkdir(final_output_dir)
@@ -253,7 +276,11 @@ ldexp_match_OutObj = ld_expand_all_control_snps(
 # check ld expanded control sets
 ld_expanded_control_sets_file = ldexp_match_OutObj.get("ld_expanded_output")
 ld_expanded_control_sets_r2_file = ldexp_match_OutObj.get("ld_r2_expanded_output")
-match_summary_by_params_df, ldscore_lead_and_ld_df, match_quality_per_lead_snp_df = check_ld_expanded_sets(
+(
+    match_summary_by_params_df,
+    ldscore_lead_and_ld_df,
+    match_quality_per_lead_snp_df,
+) = check_ld_expanded_sets(
     snpsnap_db_file,
     ld_expanded_control_sets_file,
     lead_snps_ld_counts_file,
@@ -273,21 +300,31 @@ intersectAnnoOutputObj = intersect_all_annotations(
 )
 
 
-
 # calculate genome wide summary of annotations
-anno_genom_summary_file = calc_genome_distribution_of_annotations(anno_path_dict, anno_summary_dir)
+anno_genom_summary_file = calc_genome_distribution_of_annotations(
+    anno_path_dict, anno_summary_dir
+)
 
 # calculate trait-wide enrichment
-TraitEnrichOutObj = calc_trait_entrichment(intersectAnnoOutputObj, anno_genom_summary_file, anno_path_dict, intermediate_dir)
+TraitEnrichOutObj = calc_trait_entrichment(
+    intersectAnnoOutputObj, anno_genom_summary_file, anno_path_dict, intermediate_dir
+)
+
+# organize final outputs
+finalOutObj = organize_final_outputs(
+    intersectAnnoOutputObj,
+    anno_path_dict,
+    match_quality_per_lead_snp_df,
+    match_summary_by_params_df,
+    ldbuds_r2_threshold,
+    final_output_dir,
+)
 
 
-finalOutObj = organize_final_outputs(intersectAnnoOutputObj, anno_path_dict, match_quality_per_lead_snp_df, match_summary_by_params_df, ldbuds_r2_threshold, final_output_dir)
-
-
-# # # make output plots
-intersect_ouputs = make_output_plots(intersectAnnoOutputObj, TraitEnrichOutObj,
-                                        anno_path_dict,
-                                        final_output_dir)
+# make final plots
+intersect_ouputs = make_output_plots(
+    intersectAnnoOutputObj, TraitEnrichOutObj, anno_path_dict, final_output_dir
+)
 
 
 logger.info(

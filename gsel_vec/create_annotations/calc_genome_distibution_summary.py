@@ -20,8 +20,8 @@ DATE = datetime.now().strftime("%Y-%m-%d")
 ###    PATHS # noqa
 ###
 
-ANNO_DIR = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/create_annotations/anno_dict"  # noqa
-OUTPUT_FILE = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/create_annotations/annotation_summaries.tsv"  # noqa
+ANNO_DIR = "../data/anno_dict"  # noqa
+OUTPUT_FILE = "../data/anno_dict/genome_wide_summary_of_annotations.tsv"  # noqa
 anno_path_dict = {
     "argweave": os.path.join(ANNO_DIR, "argweave_snpsnap_eur_ld0.1_collection.pickle"),
     "betascore": os.path.join(
@@ -55,6 +55,12 @@ anno_path_dict = {
     ),
     "xpehh_eas_eur": os.path.join(
         ANNO_DIR, "xpehh_eas_eur_snpsnap_eur_ld0.1_collection.pickle"
+    ),
+    "B2": os.path.join(
+        ANNO_DIR, "B2_snpsnap_eur_ld0.1_collection.pickle"
+    ),
+    "geva_allele_age": os.path.join(
+        ANNO_DIR, "geva_allele_age_snpsnap_eur_ld0.1_collection.pickle"
     ),
 }
 
