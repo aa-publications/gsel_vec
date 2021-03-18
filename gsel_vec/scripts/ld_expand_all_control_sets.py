@@ -653,7 +653,6 @@ def ld_expand_all_control_snps(
                     ],
                 )
             )
-
             # filter and group ld snps for each control snp - every control snp has a row
             # control snps w/o LD snps will have None
             complete_ld_df, miss_control_snps = dev_filter_shuffle(
