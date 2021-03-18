@@ -61,7 +61,7 @@ def load_zscore_and_pvalue(intersectAnnoOutputObj, anno_path_dict):
         zscore_df = pd.read_csv(zscore_file, sep="\t")
         control_set_anno_cover_df = pd.read_csv(control_set_anno_cover_file, sep="\t")
 
-        anno_label = anno_label.replace("_", " ")
+        # anno_label = anno_label.replace("_", " ")
         pval_df['annotation'] = anno_label
         zscore_df['annotation'] = anno_label
         control_set_anno_cover_df['annotation'] = anno_label
@@ -71,7 +71,6 @@ def load_zscore_and_pvalue(intersectAnnoOutputObj, anno_path_dict):
         anno_cover_df = anno_cover_df.append(control_set_anno_cover_df)
 
     return anno_pval_df, anno_zscore_df, anno_cover_df
-
 
 def organize_final_outputs(intersectAnnoOutputObj, anno_path_dict, match_quality_per_lead_snp_df, match_summary_by_params_df, ldbuds_r2_threshold,output_root):
 
@@ -109,8 +108,8 @@ def organize_final_outputs(intersectAnnoOutputObj, anno_path_dict, match_quality
 
 
     for annotation in anno_label_list:
-        
 
+        
         this_anno_pval_df = anno_pval_df.loc[anno_pval_df['annotation'] == annotation, ['lead_snp','pvalue','test_type', 'reject_h0_benj_hoch',  'corrected_pval_benj_hoch', 'annotation']].copy()
         this_anno_zscore_df = anno_zscore_df.loc[anno_zscore_df['annotation'] == annotation, ['lead_snp', 'z_score', 'lead_snp_anno', 'mean_controls']].copy()
         this_anno_cover_df = anno_cover_df.loc[anno_cover_df['annotation'] == annotation, ['lead_snp','mean_prop']].copy()
