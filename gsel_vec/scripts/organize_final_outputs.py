@@ -109,7 +109,7 @@ def organize_final_outputs(intersectAnnoOutputObj, anno_path_dict, match_quality
 
     for annotation in anno_label_list:
 
-        
+
         this_anno_pval_df = anno_pval_df.loc[anno_pval_df['annotation'] == annotation, ['lead_snp','pvalue','test_type', 'reject_h0_benj_hoch',  'corrected_pval_benj_hoch', 'annotation']].copy()
         this_anno_zscore_df = anno_zscore_df.loc[anno_zscore_df['annotation'] == annotation, ['lead_snp', 'z_score', 'lead_snp_anno', 'mean_controls']].copy()
         this_anno_cover_df = anno_cover_df.loc[anno_cover_df['annotation'] == annotation, ['lead_snp','mean_prop']].copy()
@@ -139,4 +139,6 @@ def organize_final_outputs(intersectAnnoOutputObj, anno_path_dict, match_quality
         # write
         to_write_df.to_csv(OutObj.get("{}_pval_zscore_per_annotation".format(annotation)), sep="\t", index=False)
 
+
+    logger.debug(f"[status] Done organizing final outputs.")
     return OutObj

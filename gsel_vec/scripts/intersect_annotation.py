@@ -594,8 +594,8 @@ def intersect_all_annotations(
         )
 
     logger.debug(f"Wrote annotaiton intersection to: {output_dir}")
-    logger.info(
-        f"Done intersecting with annotations. Took { (time.time()-intersect_start)/60 :.2f} minutes."
+    logger.debug(
+        f"[status] Done intersecting with annotations. Took { (time.time()-intersect_start)/60 :.2f} minutes."
     )
 
     return OutObj

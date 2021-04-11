@@ -227,6 +227,6 @@ def calc_trait_entrichment(intersectAnnoOutputObj, anno_genom_summary_file, anno
 
     summary_df.to_csv(OutObj.get('trait_enrichment'), index=False, sep="\t")
     logger.info("Done with trait enrichment. Took {:.2f} minutes.".format( (time.time()- t_start)/60))
-    logger.debug("Done; outputs written to: {}".format(OutObj.get('trait_enrichment')))
+    logger.debug("[status] Done; outputs written to: {}".format(OutObj.get('trait_enrichment')))
 
     return OutObj

@@ -327,7 +327,7 @@ def make_output_plots(intersectAnnoOutputObj, TraitEnrichOutObj, anno_path_dict,
     # make heatmap
     cg = plot_zscore_heatmap(intersectAnnoOutputObj, anno_path_dict)
     cg.savefig(OutObj.get('zscore_heatmap'))
-    logger.info("Heatmap of trait-associated loci saved.")
+    logger.debug("[status] Heatmap of trait-associated loci saved.")
     plt.clf()
 
     # make mean annotation value plot
@@ -336,14 +336,14 @@ def make_output_plots(intersectAnnoOutputObj, TraitEnrichOutObj, anno_path_dict,
     # fig.savefig('test3.pdf')
     plt.tight_layout()
     fig.savefig(OutObj.get('mean_anno_scatter'))
-    logger.info("Mean annotation value scatter plot saved.")
+    logger.debug("[status] Mean annotation value scatter plot saved.")
     plt.clf()
 
     # make radar plot
     enrichs, angles, sig_angles, sig_enrichs, annotation_labels, mean_n_lead_loci = prep_radar_data(TraitEnrichOutObj)
     fig, ax = plot_radar(angles, annotation_labels, enrichs, sig_angles, sig_enrichs, mean_n_lead_loci)
     fig.savefig(OutObj.get('trait_enrich_radar'))
-    logger.info("Radar plot saved.")
+    logger.debug("[status] Radar plot saved.")
 
 
 # %%

@@ -840,8 +840,8 @@ def ld_expand_all_control_snps(
     logger.debug(
         "Wrote expanded control snps to {}".format(OutObj.get("ld_expanded_output"))
     )
-    logger.info(
-        "Done LD expanding control snps. Took {:.2f} minutes.".format(
+    logger.debug(
+        "[status] Done LD expanding control snps. Took {:.2f} minutes.".format(
             (time.time() - tstart) / 60
         )
     )

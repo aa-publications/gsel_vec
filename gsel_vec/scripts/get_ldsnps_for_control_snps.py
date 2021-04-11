@@ -175,7 +175,7 @@ def get_ldsnps_for_control_snps(control_snps_file, thous_gen_file, output_root, 
         logger.debug(">>>Done with chr{}. Took {:.2f} mins.".format( chrm, (pend-pstart)/60))
 
 
-    logger.info("Done getting LD snps for control snps. It took {:.2f} minutes.".format( (time.time() - sstart)/60))
+    logger.debug("[status] Done getting LD snps for control snps. It took {:.2f} minutes.".format( (time.time() - sstart)/60))
 
     return OutputObj
 

@@ -13,7 +13,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-import pickle 
+import pickle
 from .helper_general import safe_mkdir
 
 
@@ -80,6 +80,6 @@ def calc_genome_distribution_of_annotations(anno_path_dict, anno_summary_dir):
 
     anno_genom_summary_file = os.path.join(anno_summary_dir, 'genome_wide_summary_of_annotations.tsv')
     all_summary_df.to_csv(anno_genom_summary_file, sep="\t", index=False)
-    logger.info(f"Wrote the genome-wide summary of evolutionary annotations.")
+    logger.debug(f"[status] Wrote the genome-wide summary of evolutionary annotations.")
 
     return anno_genom_summary_file

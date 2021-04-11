@@ -507,7 +507,7 @@ def check_ld_expanded_sets(
         OutObj.get("lead_snps_matching_quality_file"), sep="\t", index=False
     )
     logger.debug(
-        "Wrote summary of matching quality to: {}".format(
+        "[status] Wrote summary of matching quality to: {}".format(
             OutObj.get("lead_snps_matching_quality_file")
         )
     )

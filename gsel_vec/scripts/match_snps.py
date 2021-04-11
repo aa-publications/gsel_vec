@@ -440,6 +440,7 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
 
 
     if len(snps_to_match) == 0:
+        logger.debug("[status] No snps are left for matching...")
         sys.exit('No snps are left for matching...')
 
     # calculate thresholds for max deviation from properties allowed
@@ -474,8 +475,8 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
 
     pool.close()
     pool.join()
-    logger.info(
-        "Done matching SNPS. Took {:.2f} minutes.".format((time.time() - mstart) / 60)
+    logger.debug(
+        "[status] Done matching SNPS. Took {:.2f} minutes.".format((time.time() - mstart) / 60)
     )
 
     # consolidate results
@@ -536,7 +537,7 @@ def match_snps(input_snps_file, n_matches, ld_buddies_r2, db_file, output_root):
         columns={"snps_to_match": "lead_snp"}, inplace=True
     )  # necessary for downstream analysis
     final_matched_df.to_csv(OutObj.get("matched_snps_file"), sep="\t", index=False)
-    logger.debug("Wrote matched SNPs to: {}".format(OutObj.get("matched_snps_file")))
+    logger.debug("[status] Wrote matched SNPs to: {}".format(OutObj.get("matched_snps_file")))
 
     return OutObj
 

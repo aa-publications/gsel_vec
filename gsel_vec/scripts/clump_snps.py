@@ -338,7 +338,7 @@ def clump_snps(
     raw_gwas_df.to_csv(
         OutObj.get("reprint_gwas_file"), sep="\t", index=False
     )  # write a copy of the input data
-    logger.info(f"Loaded GWAS summary stats with {raw_gwas_df.shape[0]} rows.")
+    logger.info(f"[status] Loaded GWAS summary stats with {raw_gwas_df.shape[0]} rows.")
 
     # write input snps by chromosome
     logger.debug(f"Splitting GWAS summary stats by chromosome.")
@@ -419,10 +419,10 @@ def clump_snps(
     store_clump_df.to_csv(
         OutObj.get("clumped_snps_file"), index=False, header=True, sep="\t"
     )
+
+
     logger.debug(
-        "Combined all plink clump files by chromosome to: {}".format(
-            (OutObj.get("clumped_snps_file"))
-        )
+        "[status] Plink clump found {} lead snps.".format(store_clump_df.shape[0])
     )
 
     ##
@@ -465,7 +465,10 @@ def clump_snps(
 
     # check if there are no LD snps ...
     if lead_ld_df.shape[0] == 0:
-        sys.exit("No lead snps found in data set...")
+        logger.debug(
+            "[status] No lead or ld snps found after clumping."
+        )
+        sys.exit("No lead or ld snps found after clumping.")
 
     # for lead snps, LD expand them
     # note: if lead SNP doesn't have any LD snps at specified r2, then it will not be reported in plink's outputs ( take care of this downstream in the pipeline)
@@ -517,7 +520,7 @@ def clump_snps(
         f"* While running plink clump, {len(store_missing_variants)} input SNPs not found in 1KG written."
     )
     logger.info(
-        f"Done clumping GWAS summary stats. Found {store_ld_bins_df.lead_snp.nunique() } lead snps and took {(time.time()-tstart)/60:.2f} minutes."
+        f"[status] Done clumping GWAS summary stats. Found {store_ld_bins_df.lead_snp.nunique() } lead snps and took {(time.time()-tstart)/60:.2f} minutes."
     )
 
     return OutObj
