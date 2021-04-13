@@ -327,8 +327,8 @@ intersect_ouputs = make_output_plots(
 )
 
 
-logger.info(
-    "Done with master.py. Took {:.2f} minutes.".format(
+logger.debug(
+    "[status] Done with master.py. Took {:.2f} minutes.".format(
         (time.time() - master_start) / 60
     )
 )

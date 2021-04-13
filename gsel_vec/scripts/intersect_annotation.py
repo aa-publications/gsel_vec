@@ -13,6 +13,7 @@ import pickle
 import time
 import argparse
 
+import shutil
 import numpy as np
 import pandas as pd
 
@@ -178,9 +179,13 @@ def get_summary_by_lead_snp(long_df, summary_by):
 
 
 def intersect_annotation(
-    anno_label_path_pair, matched_file, two_sided_bool_dict, summary_type
+    anno_label_path_pair, matched_file, two_sided_bool_dict, summary_type, output_dir
 ):
 
+    def pickle_df(df, name, output_dir=output_dir):
+        pickle_path=os.path.join(output_dir, name)
+        df.to_pickle(pickle_path)
+        return pickle_path
     anno_label = anno_label_path_pair[0]
     anno_file = anno_label_path_pair[1]
 
@@ -216,16 +221,38 @@ def intersect_annotation(
         summary_by_df, anno_label, two_sided_bool_dict
     )
 
+
+    # DEV
+    # instead of returning; try writing these temporarily to file
+    # and then reading them...
+    summary_by_df_fname = pickle_df(summary_by_df, "summary_by_df_{}.pickle".format(anno_label))
+    summary_by_pval_df_fname = pickle_df(summary_by_pval_df, "summary_by_pval_df_{}.pickle".format(anno_label))
+    summary_by_z_score_df_fname = pickle_df(summary_by_z_score_df,  "summary_by_z_score_df_{}.pickle".format(anno_label))
+    pooled_overlap_df_fname = pickle_df(pooled_overlap_df, "pooled_overlap_df_{}.pickle".format(anno_label))
+    by_control_set_overlap_df_fname = pickle_df(by_control_set_overlap_df, "by_control_set_overlap_df_{}.pickle".format(anno_label))
+    long_df_fname =pickle_df(long_df, "long_df_{}.pickle".format(anno_label))
+
     return {
         "anno_label": anno_label,
-        "summary_by_df": summary_by_df,
-        "summary_by_pval_df": summary_by_pval_df,
-        "summary_by_zscore_df": summary_by_z_score_df,
+        "summary_by_df": summary_by_df_fname,
+        "summary_by_pval_df": summary_by_pval_df_fname,
+        "summary_by_zscore_df": summary_by_z_score_df_fname,
         "summary_type": summary_type,
-        "pooled_overlap": pooled_overlap_df,
-        "by_control_set_overlap": by_control_set_overlap_df,
-        "annotation_long_df": long_df,
+        "pooled_overlap": pooled_overlap_df_fname,
+        "by_control_set_overlap": by_control_set_overlap_df_fname,
+        "annotation_long_df": long_df_fname,
     }
+
+    # return {
+    #     "anno_label": anno_label,
+    #     "summary_by_df": summary_by_df,
+    #     "summary_by_pval_df": summary_by_pval_df,
+    #     "summary_by_zscore_df": summary_by_z_score_df,
+    #     "summary_type": summary_type,
+    #     "pooled_overlap": pooled_overlap_df,
+    #     "by_control_set_overlap": by_control_set_overlap_df,
+    #     "annotation_long_df": long_df,
+    # }
 
 
 def set_up_outputs(OutputObj, anno_label_list, summary_type):
@@ -479,6 +506,10 @@ def intersect_all_annotations(
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs(OutObj, anno_label_list, summary_type)
 
+    # create a temp directory
+    temp_output_dir = os.path.join(output_dir, 'temp_dir')
+    os.mkdir(temp_output_dir)
+
     ###
     ### one thread per annotation intersectiong
     ###
@@ -494,6 +525,7 @@ def intersect_all_annotations(
         matched_file=matched_file,
         two_sided_bool_dict=two_sided_bool_dict,
         summary_type=summary_type,
+        output_dir=temp_output_dir,
     )
 
     # create label: filepath dictionary pairs
@@ -513,15 +545,22 @@ def intersect_all_annotations(
     # unpack and write
     for anno_result in intersect_ouputs:
 
-        anno_label = anno_result["anno_label"]
 
-        summary_by_df = anno_result["summary_by_df"]
-        summary_by_pval_df = anno_result["summary_by_pval_df"]
-        summary_by_zscore_df = anno_result["summary_by_zscore_df"]
+
+
+        # modify to load from file
+        anno_label = anno_result["anno_label"]
+        summary_by_df = pd.read_pickle(anno_result["summary_by_df"])
+        summary_by_pval_df = pd.read_pickle(anno_result["summary_by_pval_df"])
+        summary_by_zscore_df = pd.read_pickle(anno_result["summary_by_zscore_df"])
         summary_type = anno_result["summary_type"]
-        pooled_overlap_df = anno_result["pooled_overlap"]
-        by_control_set_overlap = anno_result["by_control_set_overlap"]
-        annotation_long_df = anno_result["annotation_long_df"]
+        pooled_overlap_df = pd.read_pickle(anno_result["pooled_overlap"])
+        by_control_set_overlap = pd.read_pickle(anno_result["by_control_set_overlap"])
+        annotation_long_df = pd.read_pickle(anno_result["annotation_long_df"])
+
+
+
+
 
         combined_df = pd.merge(
             pd.merge(
@@ -592,6 +631,8 @@ def intersect_all_annotations(
             index=False,
             na_rep="NaN",
         )
+
+    shutil.rmtree(temp_output_dir)
 
     logger.debug(f"Wrote annotaiton intersection to: {output_dir}")
     logger.debug(

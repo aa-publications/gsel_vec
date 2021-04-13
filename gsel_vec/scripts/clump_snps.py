@@ -519,7 +519,7 @@ def clump_snps(
     logger.info(
         f"* While running plink clump, {len(store_missing_variants)} input SNPs not found in 1KG written."
     )
-    logger.info(
+    logger.debug(
         f"[status] Done clumping GWAS summary stats. Found {store_ld_bins_df.lead_snp.nunique() } lead snps and took {(time.time()-tstart)/60:.2f} minutes."
     )
 

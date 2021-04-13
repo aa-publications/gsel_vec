@@ -21,7 +21,7 @@ DATE = datetime.now().strftime("%Y-%m-%d")
 ###
 
 ANNO_DIR = "../data/anno_dict"  # noqa
-OUTPUT_FILE = "../data/anno_dict/genome_wide_summary_of_annotations.tsv"  # noqa
+OUTPUT_FILE = "../create_annotations"  # noqa
 anno_path_dict = {
     "argweave": os.path.join(ANNO_DIR, "argweave_snpsnap_eur_ld0.1_collection.pickle"),
     "betascore": os.path.join(
