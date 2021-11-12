@@ -4,7 +4,7 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 
 **Required Software:** <br> 1) [Python 3.6](https://www.python.org/downloads/release/python-360/)   
 2) [PLINK 1.90 beta](https://www.cog-genomics.org/plink2)  
-3) Conda
+3) [Anaconda] (https://www.anaconda.com/products/individual)
 
 # Install 
 1) `git clone https://github.com/abraham-abin13/gsel_vec.git` 
