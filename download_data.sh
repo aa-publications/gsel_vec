@@ -8,7 +8,7 @@ SNPSNAP="https://ndownloader.figshare.com/files/26226920"
 KG_DICT="https://ndownloader.figshare.com/articles/13664570/versions/1"
 
 # OUTPUT_DIR="/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/gsel_vec/data"
-OUTPUT_DIR="/dors/capra_lab/users/abraha1/temp_/test_dl_data"
+OUTPUT_DIR=${PWD}"/gsel_vec/data"
 
 
 
