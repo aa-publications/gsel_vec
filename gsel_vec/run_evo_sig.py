@@ -305,10 +305,17 @@ anno_genom_summary_file = calc_genome_distribution_of_annotations(
     anno_path_dict, anno_summary_dir
 )
 
+# # calculate trait-wide enrichment
+# TraitEnrichOutObj = calc_trait_entrichment(
+#     intersectAnnoOutputObj, anno_genom_summary_file, anno_path_dict, intermediate_dir
+# )
+
 # calculate trait-wide enrichment
 TraitEnrichOutObj = calc_trait_entrichment(
-    intersectAnnoOutputObj, anno_genom_summary_file, anno_path_dict, intermediate_dir
+    intersectAnnoOutputObj, anno_genom_summary_file, anno_path_dict, final_output_dir
 )
+
+
 
 # organize final outputs
 finalOutObj = organize_final_outputs(
