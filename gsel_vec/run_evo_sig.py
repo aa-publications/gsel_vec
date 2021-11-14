@@ -111,10 +111,10 @@ summary_type = "max"
 # -----------
 
 # data_path = pkg_resources.resource_filename("gsel_vec", "data/")
-data_path = "./data"
+# data_path = "./data"
+data_path = os.path.join(os.getcwd(), 'data')
 
-
-snpsnap_db_file = os.path.join(data_path, "snpsnap_database/ld0.9_collection.tab.gz")
+snpsnap_db_file = os.path.join(data_path, "snpsnap_database/snpsnap_database_ld0.9.tab.gz")
 thous_gen_file = os.path.join(data_path, "1kg/EUR.chr{}.phase3.nodups")
 anno_dir = os.path.join(data_path, "anno_dict")
 
