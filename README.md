@@ -1,19 +1,23 @@
 # Evolutionary signatures from GWAS
 This pipeline detects enrichment and depletion of evolutionary signatures from GWAS summary statistics.<br>
-**Note: this pipeline is currently under development.**
+**Note: this pipeline is currently under development.**\
 
-**Required Software:** <br> 1) [Python 3.6](https://www.python.org/downloads/release/python-360/)   
-2) [PLINK 1.90 beta](https://www.cog-genomics.org/plink2)  
-3) Conda
+--> diagram place holder <---
 
 # Install 
-1) `git clone https://github.com/abraham-abin13/gsel_vec.git` 
-2) run download_data.sh 
-3) `conda env create -n conda-env -f evo_sig_gwas.yml`
+
+**Please install these dependecies.**<br>1) [PLINK 1.90 beta](https://www.cog-genomics.org/plink2)  
+2) [Anaconda](https://www.anaconda.com/products/individual)
+
+**Run the** `commands` **as shown.**<br>1) clone git repository: `git clone https://github.com/abraham-abin13/gsel_vec.git` <br>
+2) run download_data.sh: `./gsel_vec/gsel_vec/demo.sh` <br>
+3) create conda env: `conda env create -n conda-env -f gsel_vec/evo_sig_gwas.yml`
 
 
 # Quick Start 
-See demo.sh for example.
+
+3) Navigate to /gsel_vec/gsel_vec and run `./demo.sh`
+
 
 
 # Details 
