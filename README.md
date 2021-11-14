@@ -10,8 +10,9 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 2) [Anaconda](https://www.anaconda.com/products/individual)
 
 **Run the** `commands` **as shown.**<br>1) clone git repository: `git clone https://github.com/abraham-abin13/gsel_vec.git` <br>
-2) run download_data.sh: ` cd gsel_vec; ./download_data.sh` <br>
-3) create conda env: `conda env create -n conda-env -f gsel_vec/evo_sig_gwas.yml`
+3) change directory: `cd gsel_vec`
+2) run download_data.sh: `./download_data.sh` <br>
+3) create conda env: `conda env create -n conda-env -f conda_env.yml`
 
 
 # Quick Start 
