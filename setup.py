@@ -10,7 +10,7 @@ setuptools.setup(
     version="v0.0.1",
     long_description="long descrip",
     url="https://github.com/abraham-abin13/gsel_vec",
-    scripts=["gsel_vec/run_evo_sig.py"],
+    scripts=["bin/top_gsel_vec.py"],
     packages=setuptools.find_packages(),
     install_requires=[],
     # include_package_data=True,
