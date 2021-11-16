@@ -7,9 +7,16 @@ import sys
 import argparse
 from pathlib import Path
 from gsel_vec import run_evo_sig
+import pkg_resources
+
 
 ROOT = Path(os.path.abspath(os.path.dirname(__file__)))
-TESTING_DATA = ROOT.parent.joinpath('gsel_vec', 'demo', 'input_data','bmi_small.test')
+# TESTING_DATA = ROOT.parent.joinpath('gsel_vec', 'demo', 'input_data','bmi_small.test')
+
+TESTING_DIR = pkg_resources.resource_filename("gsel_vec", "demo")
+TESTING_DATA= os.path.join(TESTING_DIR, 'input_data','bmi_small.test')
+print("data path si {}".format(TESTING_DATA))
+
 
 
 
@@ -48,4 +55,3 @@ if __name__ =="__main__":
 
 
     run_evo_sig.main(analysis_name, gwas_summary_file, outputpath)
-    

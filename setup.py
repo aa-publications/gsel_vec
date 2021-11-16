@@ -13,8 +13,8 @@ setuptools.setup(
     scripts=["bin/top_gsel_vec.py"],
     packages=setuptools.find_packages(),
     install_requires=[],
-    # include_package_data=True,
-    # package_data={'': ['data/*.csv']},
+    include_package_data=True,
+    package_data={'gsel_vec': ['demo/input_data/*', 'data/1kg/*', 'data/anno_dict/*', 'data/snpsnap_database/*']},
     python_requires=">=3.6",
     classifiers=[
         "Programming Language :: Python",
@@ -22,3 +22,11 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
     ],
 )
+
+
+
+# setup(...,
+#       packages=['mypkg'],
+#       package_dir={'mypkg': 'src/mypkg'},
+#       package_data={'mypkg': ['data/*.dat']},
+#       )

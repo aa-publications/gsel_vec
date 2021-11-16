@@ -92,9 +92,16 @@ def main(analysis_name, gwas_summary_file, outputpath):
     # DEPENDENCIES
     # -----------
 
+
+    # data paths
+    data_path = pkg_resources.resource_filename("gsel_vec", "data")
+    # TESTING_DATA= os.path.join(TESTING_DIR, 'input_data','bmi_small.test')
+    print("LLLLL!!!")
+    print(f"DATA PATH IS {data_path}")
+
     # data_path = pkg_resources.resource_filename("gsel_vec", "data/")
     # data_path = "./data"
-    data_path = os.path.join(os.getcwd(), 'data')
+    # data_path = os.path.join(os.getcwd(), 'data')
 
     snpsnap_db_file = os.path.join(data_path, "snpsnap_database/snpsnap_database_ld0.9.tab.gz")
     thous_gen_file = os.path.join(data_path, "1kg/EUR.chr{}.phase3.nodups")
