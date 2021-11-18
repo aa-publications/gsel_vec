@@ -4,37 +4,47 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 
 --> diagram place holder <---
 
-# Install 
+# Install
 
-**Please install these dependecies.** 
-1) [PLINK 1.90 beta](https://www.cog-genomics.org/plink2)  
+**Please install these dependecies.**
+1) [PLINK 1.90 beta](https://www.cog-genomics.org/plink2)
 2) [Anaconda](https://www.anaconda.com/products/individual)
 
 **Run the** `commands` **as shown.**
 1) clone git repository: `git clone https://github.com/abraham-abin13/gsel_vec.git` <br>
-2) change directory: `cd gsel_vec`   
+2) change directory: `cd gsel_vec`
 3) run download_data.sh: `./download_data.sh` <br>
+4) pip install .
 4) create conda env: `conda env create -n conda-env -f conda_env.yml`
 
+**Demo after installation**
+1) activate conda env `source activate manual_`
+2) run pipeline with demo data. `top_gsel_vec.py`
 
-# Quick Start <br> 
-  
-1) Navigate to /gsel_vec/gsel_vec and run `./demo.sh`
 
-### Inputs and Outputs
---> describe I/O <--- 
+# Inputs
+The main command is `top_gsel_vec.py` which accepts the following arguments (in this order):
+1) __analysis_name__: a string without spaces describing the analysis
+2) **gwas_summary_file**: full path to the gwas summary statistics file
+3) **outputpath**: full path to create output directory (with the same name as analysis_name).
 
-# Details 
+Here is an example of the full command:
+`top_gsel_vec.py testing /path/to/gwas_summary_file /outputpath`
 
-### Required Data   
-1) Download both folders to the `gsel_vec` directory.  
-a) "snpsnap_database"  - [link (2.4 GB)](https://drive.google.com/drive/folders/1P9r9axKakwY20eD_f3NCoRY0g1aLcp2T?usp=sharing)    
+# Outputs
+Outputs are saved to **outputpath** in a folder named **analysis_name**. 
+
+# Details
+
+### Required Data
+1) Download both folders to the `gsel_vec` directory.
+a) "snpsnap_database"  - [link (2.4 GB)](https://drive.google.com/drive/folders/1P9r9axKakwY20eD_f3NCoRY0g1aLcp2T?usp=sharing)
 b) "1kg" - [link (1.5 GB)](https://drive.google.com/drive/folders/1yjp31LhZSi2Ftu_QmgKDKevLqHKJTH-0?usp=sharing)
 
 
-2) Download "anno_dict" folder to `gsel_vec/create_annotations`.  
+2) Download "anno_dict" folder to `gsel_vec/create_annotations`.
 a) "anno_dict" [link (4.1 GB)](https://drive.google.com/drive/folders/1dps7iWshulKKEukxCdBu6MTy3j2s8KCj?usp=sharing)
-  
+
 
 
 ### Inputs
