@@ -9,10 +9,10 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 2. [Anaconda](https://www.anaconda.com/products/individual)
 
 **Run the** `commands` **as shown.** <br> 1) clone git repository: `git clone https://github.com/abraham-abin13/gsel_vec.git` <br>
-2) change directory: `cd gsel_vec`
-3) run download_data.sh: `./download_data.sh` <br>
-4) `pip install .` <br>
-5) create conda env: `conda env create -n conda-env -f conda_env.yml`
+2) change directory: `cd gsel_vec` <br>
+4) run download_data.sh: `./download_data.sh` <br>
+5) install package: `pip install .` <br>
+6) create conda env: `conda env create -n conda-env -f conda_env.yml`
 
 **Demo after installation** <br> 1) activate conda env `source activate manual_` <br> 
 2) run pipeline with demo data. `top_gsel_vec.py`
@@ -26,7 +26,8 @@ The main command is `top_gsel_vec.py <analysis_name>   <gwas_summary_file>   <ou
 -  **outputpath**: full path to create output directory which will have the same name as **analysis_name**.
 
 ### Outputs
-Outputs are saved to **outputpath** in a folder named **analysis_name**. 
+Outputs are saved to **outputpath** in a folder with the name **analysis_name**. The final outputs of the analyses are stored in the folder **final_outputs**. This contains... 
+
 
 
 
