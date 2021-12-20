@@ -54,4 +54,4 @@ if __name__ =="__main__":
 
 
 
-    run_evo_sig.main(analysis_name, gwas_summary_file, outputpath)
+    run_evo_sig.main(analysis_name, gwas_summary_file, outputpath, ROOT)
