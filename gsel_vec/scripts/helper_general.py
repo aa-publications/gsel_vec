@@ -144,6 +144,27 @@ def decode_warnings(plink_stdout, plinkcmd):
     return decode_stdout, warn_bool
 
 
+
+def find_no_sig_clumped_results(plink_stdout, plinkcmd):
+
+    decode_stdout = plink_stdout.decode("utf-8").splitlines()
+    exists_bool = [x.find("No significant --clump results.") for x in decode_stdout]
+
+    no_sig_results_bool = False
+    for b in  exists_bool:
+        if (b != -1):
+            no_sig_results_bool = True
+            break
+
+    return decode_stdout, no_sig_results_bool
+
+def warning_check_no_sig_clumped_results(plink_stdout, plink_stderr, plinkcmd, logger=None):
+
+    decode_stdout, no_sig_results_bool = find_no_sig_clumped_results(plink_stdout, plinkcmd)
+
+    return no_sig_results_bool
+
+
 def error_check_plink_run(plink_stdout, plink_stderr, plinkcmd, logger=None):
 
     # error handling

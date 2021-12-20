@@ -399,6 +399,9 @@ def clump_snps(
         )
         keep_warnings.append(any_warnings)
 
+
+    #TODO: add a check to see if """ Warning: No significant --clump results.  Skipping"""
+
     if np.any(keep_warnings):
         logger.debug("Plink threw warnings...check the log file.")
 
