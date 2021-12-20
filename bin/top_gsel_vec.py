@@ -26,21 +26,21 @@ if __name__ =="__main__":
         description="Get evolutionary signatures using GWAS summary stats."
     )
     parser.add_argument(
-        "--analysis_name",
+        "-a", "--analysis_name",
         action="store",
         type=str,
         help="name of this analysis no spaces allowed",
         default="testing",
     )
     parser.add_argument(
-        "--gwas_summary_file",
+        "-g", "--gwas_summary_file",
         action="store",
         type=str,
         help="full path to gwas summary stats file",
         default=TESTING_DATA,
     )
     parser.add_argument(
-        "--outputpath",
+        "-o", "--outputpath",
         action="store",
         type=str,
         help="full path to create output directory named 'analysis_name'",
