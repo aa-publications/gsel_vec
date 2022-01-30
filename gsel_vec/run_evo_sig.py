@@ -66,8 +66,11 @@ def main(analysis_name, gwas_summary_file, outputpath, ROOT):
     # ld_thresholds:                ld threshold to create matched control regions (must be in the form "ld<=1.0" or ["ld<=1.0","ld<=0.9"] if expanding to 0.8<r2≤1.
     # summary_type:                 how to summarize the evolutionary annotation over genomic regions (accepts min, max, median, mean)
 
+    if analysis_name =="testing":
+        num_control_sets = 100
+    else:
+        num_control_sets = 5000
 
-    num_control_sets = 5000
     lead_snp_min_gwas_pvalue = 0.00000005
     ld_snps_min_gwas_pvalue = 0.00000005
     min_r2_to_clump = 0.1
