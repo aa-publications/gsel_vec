@@ -1,8 +1,9 @@
 # Evolutionary signatures from GWAS
 This pipeline detects enrichment and depletion of evolutionary signatures from GWAS summary statistics.<br>
-**Note: this pipeline is currently under development.**\
+**Note: this pipeline is currently under development.**
 
---> diagram place holder <---
+
+![](<https://github.com/abraham-abin13/gsel_vec/blob/master/schematic/schematic_v0.jpg>)
 
 ## Install
 **Please install these dependecies.** <br>1. [PLINK 1.90 beta](https://www.cog-genomics.org/plink2) <br>
