@@ -40,7 +40,7 @@ if __name__ =="__main__":
         default=TESTING_DATA,
     )
     parser.add_argument(
-        "-o", "--outputpath",
+        "-o", "--output_path",
         action="store",
         type=str,
         help="full path to create output directory named 'analysis_name'",
@@ -50,7 +50,7 @@ if __name__ =="__main__":
     args = parser.parse_args()
     analysis_name = args.analysis_name
     gwas_summary_file = args.gwas_summary_file
-    outputpath = args.outputpath
+    outputpath = args.output_path
 
 
 
