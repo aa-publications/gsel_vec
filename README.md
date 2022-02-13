@@ -3,7 +3,7 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 **Note: this pipeline is currently under development.**
 
 
-![](<https://github.com/abraham-abin13/gsel_vec/blob/master/schematic/schematic_v1.jpg>)
+![](<https://github.com/abraham-abin13/gsel_vec/blob/master/schematic/for_repov1.jpg>)
 
 ## Install
 **Please install these dependecies.** <br>1. [PLINK 1.90 beta](https://www.cog-genomics.org/plink2) <br>
