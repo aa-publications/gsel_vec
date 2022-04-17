@@ -13,7 +13,7 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 2) change directory: `cd gsel_vec` <br>
 4) run download_data.sh: `./download_data.sh` <br>
 5) install package: `pip install .` <br>
-6) create conda env: `conda env create -n conda-env -f conda_env.yml`
+6) create conda env: `conda env create -f conda_env.yml`
 
 **Demo after installation** <br> 1) activate conda env `source activate manual_` <br>
 2) run pipeline with demo data. `top_gsel_vec.py`
