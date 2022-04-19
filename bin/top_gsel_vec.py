@@ -11,13 +11,15 @@ import pkg_resources
 
 
 ROOT = Path(os.path.abspath(os.path.dirname(__file__)))
-# TESTING_DATA = ROOT.parent.joinpath('gsel_vec', 'demo', 'input_data','bmi_small.test')
+print("ROOT path si {}".format(ROOT))
+
 
 TESTING_DIR = pkg_resources.resource_filename("gsel_vec", "demo")
 TESTING_DATA= os.path.join(TESTING_DIR, 'input_data','bmi_small.test')
-print("data path si {}".format(TESTING_DATA))
+# print("testing data path is {}".format(TESTING_DATA))
 
-
+DATA_ROOT_DIR = pkg_resources.resource_filename("gsel_vec", "data")
+# print("data path is {}".format(DATA_ROOT_DIR))
 
 
 if __name__ =="__main__":
@@ -47,11 +49,22 @@ if __name__ =="__main__":
         default=os.getcwd(),
     )
 
+    parser.add_argument(
+    '-r', '--run_by_chr',
+    action='store_true',
+    default=False,
+    help='flag whether this is just one chromosome of summary statistics',
+)
+
+
     args = parser.parse_args()
     analysis_name = args.analysis_name
     gwas_summary_file = args.gwas_summary_file
     outputpath = args.output_path
+    if args.run_by_chr:
+        run_by_chr=True
+    else:
+        run_by_chr=False
 
 
-
-    run_evo_sig.main(analysis_name, gwas_summary_file, outputpath, ROOT)
+    run_evo_sig.main(analysis_name, gwas_summary_file, outputpath, DATA_ROOT_DIR, run_by_chr)

@@ -20,7 +20,7 @@ from multiprocessing import Pool, cpu_count
 import numpy as np
 import pandas as pd
 import pkg_resources
-
+from pathlib import Path
 
 from gsel_vec.scripts.check_ld_expanded_control_sets import check_ld_expanded_sets
 from gsel_vec.scripts.clump_snps import clump_snp_list, clump_snps
@@ -43,7 +43,7 @@ master_start = time.time()
 # -----------
 # Inputs and Outputs
 # -----------
-def main(analysis_name, gwas_summary_file, outputpath, ROOT):
+def main(analysis_name, gwas_summary_file, outputpath, ROOT, run_by_chr=False):
 
 
     outputdir = os.path.join(outputpath, analysis_name)
@@ -67,7 +67,7 @@ def main(analysis_name, gwas_summary_file, outputpath, ROOT):
     # summary_type:                 how to summarize the evolutionary annotation over genomic regions (accepts min, max, median, mean)
 
     if analysis_name =="testing":
-        num_control_sets = 100
+        num_control_sets = 50
     else:
         num_control_sets = 5000
 
@@ -89,18 +89,13 @@ def main(analysis_name, gwas_summary_file, outputpath, ROOT):
 
 
     # data paths
-    data_path = ROOT.parent.joinpath('gsel_vec', 'data')
-    # TESTING_DATA= os.path.join(TESTING_DIR, 'input_data','bmi_small.test')
+    ROOT=Path(ROOT)
+    data_path = ROOT.parent.joinpath( 'data')
+
 
     snpsnap_db_file = os.path.join(data_path, "snpsnap_database/snpsnap_database_ld0.9.tab.gz")
     thous_gen_file = os.path.join(data_path, "1kg/EUR.chr{}.phase3.nodups")
     anno_dir = os.path.join(data_path, "anno_dict")
-
-
-    # snpsnap_db_file = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/snpsnap_database/ld0.9_collection.tab.gz"
-    # thous_gen_file = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/1kg/EUR.chr{}.phase3.nodups"
-    # anno_dir = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/anno_dict"
-    # anno_summary_dir = "/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/data/anno_genome_summary"
 
     anno_path_dict = {
         "argweave": os.path.join(anno_dir, "argweave_snpsnap_eur_ld0.1_collection.pickle"),
@@ -278,21 +273,24 @@ def main(analysis_name, gwas_summary_file, outputpath, ROOT):
     )
 
 
-    # calculate genome wide summary of annotations
-    anno_genom_summary_file = calc_genome_distribution_of_annotations(
-        anno_path_dict, anno_summary_dir
-    )
+    if run_by_chr:
 
-    # # calculate trait-wide enrichment
-    # TraitEnrichOutObj = calc_trait_entrichment(
-    #     intersectAnnoOutputObj, anno_genom_summary_file, anno_path_dict, intermediate_dir
-    # )
+        # calculate genome wide summary of annotations
+        anno_genom_summary_file = calc_genome_distribution_of_annotations(
+            anno_path_dict, anno_summary_dir
+        )
 
-    # calculate trait-wide enrichment
-    TraitEnrichOutObj = calc_trait_entrichment(
-        intersectAnnoOutputObj, anno_genom_summary_file, anno_path_dict, final_output_dir
-    )
+        # calculate trait-wide enrichment
+        TraitEnrichOutObj = calc_trait_entrichment(
+            intersectAnnoOutputObj, anno_genom_summary_file, anno_path_dict, final_output_dir
+        )
 
+        # make final plots
+        intersect_ouputs = make_output_plots(
+            intersectAnnoOutputObj, TraitEnrichOutObj, anno_path_dict, final_output_dir
+        )
+    else:
+        print("skipping trait-wide enrichments")
 
 
     # organize final outputs
@@ -305,11 +303,6 @@ def main(analysis_name, gwas_summary_file, outputpath, ROOT):
         final_output_dir,
     )
 
-
-    # make final plots
-    intersect_ouputs = make_output_plots(
-        intersectAnnoOutputObj, TraitEnrichOutObj, anno_path_dict, final_output_dir
-    )
 
 
     logger.debug(
