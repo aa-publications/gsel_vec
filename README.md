@@ -11,11 +11,14 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 
 **Run the** `commands` **as shown.** <br> 1) clone git repository: `git clone https://github.com/abraham-abin13/gsel_vec.git` <br>
 2) change directory: `cd gsel_vec` <br>
-4) run download_data.sh: `./download_data.sh` <br>
-5) install package: `pip install .` <br>
-6) create conda env: `conda env create -f conda_env.yml`
+3) *run download_data.sh: `./download_data.sh` <br>
+4) install package: `pip install .` <br>
+5) create conda env: `conda env create -f conda_env.yml`
 
-**Demo after installation** <br> 1) activate conda env `source activate manual_` <br>
+*requires the the 'wget' utility; if on a mac, install wget using brew ('>brew install wget')
+
+**Demo after installation** <br>
+1) activate conda env `source activate manual_` <br>
 2) run pipeline with demo data. `top_gsel_vec.py`
 
 
@@ -71,4 +74,18 @@ C. Interpreting **pval_zscore_per_anno/*.tsv** output
 | final_qc_include  | if False, remove trait-associated region from downstream analysis  |
 
 D. Methods
-- Please see manuscript.
+- For details please see manuscript.
+
+### Running one chromosome at a time
+For GWAS with a large number of trait-associated regions, this pipeline can be run on individual chromosomes. The results from each chromosome can be combined using the script `gsel_vec/gsel_vec/scripts/by_chr_calc_enrich.py`.
+
+A. Instructions
+1. split summary statistics into files for each chromosome
+2. per chromosome files should be named chr<#>_<analysis_name>
+3. create a folder for output_path named <analysis_name>
+4. run `top_gsel_vec.py <analysis_name> <full_path_to_per_chromosome_file> <output_path> --run_by_chr` for each chromosome
+    * note the file naming convention
+    * note the `--run_by_chr` flag is added
+    * note the <output_path> should be the full path to the folder named <analysis_name> created in step 3.
+5. run `python gsel_vec/gsel_vec/scripts/by_chr_calc_enrich.py -g <output_path>`.
+6. Trait-wide enrichment will saved to `<analysis_name>_extreme_regions_mean_enrichment_all_annotation.tsv`
