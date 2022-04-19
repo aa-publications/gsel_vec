@@ -78,6 +78,8 @@ D. Methods
 
 ### Running one chromosome at a time
 For GWAS with a large number of trait-associated regions, this pipeline can be run on individual chromosomes. The results from each chromosome can be combined using the script `gsel_vec/gsel_vec/scripts/by_chr_calc_enrich.py`.
+* to run this script, you need to have the dask python package installed; you can install the `conda_env_dask.yml` conda enviornment for this.
+
 
 A. Instructions
 1. split summary statistics into files for each chromosome
