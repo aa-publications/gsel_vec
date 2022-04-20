@@ -56,7 +56,7 @@ else:
     ANNO_FILE = Path(results.gsel_output_dir.rstrip('\\'))
     ANNO_SUMM_FILE = list(Path(results.gsel_output_dir).glob('*/anno_genome_summary/genome_wide_summary_of_annotations.tsv'))[0] # pick one
     trait_name = Path(results.gsel_output_dir).stem # GSEL_Output directory is the name of trait_name
-    OUTPUT_DIR=results.gsel_output_dir
+    OUTPUT_DIR=Path(results.gsel_output_dir)
 
 
 
@@ -92,7 +92,6 @@ def dask_load_annotation(trait_name, annotation, anno_files, cache_dir=None):
 
     print(f"Dask: Loaded {len(anno_files)} chromosomes in {took(time.time(), dstart )} minutes.")
     return gwas_df, matched_df
-
 
 def calc_emp_pval(trait_summarized_df, matched_all_regions_df):
 
@@ -130,7 +129,6 @@ def count_before_after_na(matched_df,gwas_df):
 
 
     return no_na_gwas_mean_df, no_na_matched_df, counts_after_summary_dict
-
 
 def vec_sumarize_annotation(gwas_df, matched_df):
 
@@ -189,7 +187,6 @@ def descrip_stats_(trait_summarized_df, matched_all_regions_df):
     descrip_stats_dict['n_matched_sets'] = matched_all_regions_df.set.nunique()
 
     return descrip_stats_dict
-
 
 def calc_enrichment(genom_std_per_anno_dict, annotation, descrip_dict):
 
