@@ -6,16 +6,20 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 ![](<https://github.com/abraham-abin13/gsel_vec/blob/master/schematic/for_repo.jpg>)
 
 ## Install
-**Please install these dependecies.** <br>1. [PLINK 1.90 beta](https://www.cog-genomics.org/plink2) <br>
-2. [Anaconda](https://www.anaconda.com/products/individual)
+**Please install these dependecies.**
+<br>1. [PLINK 1.90 beta](https://www.cog-genomics.org/plink2)<br>2. [Anaconda](https://www.anaconda.com/products/individual) <br>
 
-**Run the** `commands` **as shown.** <br> 1) clone git repository: `git clone https://github.com/abraham-abin13/gsel_vec.git` <br>
+
+**Run the** `commands` **as shown.** <br>
+1) clone git repository: `git clone https://github.com/abraham-abin13/gsel_vec.git` <br>
 2) change directory: `cd gsel_vec` <br>
 3) *run download_data.sh: `./download_data.sh` <br>
-4) install package: `pip install .` <br>
-5) create conda env: `conda env create -f conda_env.yml`
+- _note: requires the the 'wget' utility; if on a mac, install wget using brew (`brew install wget`)_
 
-*requires the the 'wget' utility; if on a mac, install wget using brew ('>brew install wget')
+4) create conda env: `conda env create -f conda_env_manual_dask.yml` <br>
+5) activate conda env: `source activate evo_dask` <br>
+5) install package: `pip install .` <br>
+
 
 **Demo after installation** <br>
 1) activate conda env `source activate manual_` <br>
