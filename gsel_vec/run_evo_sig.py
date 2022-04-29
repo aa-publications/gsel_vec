@@ -134,7 +134,7 @@ def main(analysis_name, gwas_summary_file, outputpath, ROOT, run_by_chr=False):
         "geva_allele_age": os.path.join(
             anno_dir, "geva_allele_age_snpsnap_eur_ld0.1_collection.pickle"
         ),
-        "B2": os.path.join(anno_dir, "B2_snpsnap_eur_ld0.1_collection.pickle"),
+        # "B2": os.path.join(anno_dir, "B2_snpsnap_eur_ld0.1_collection.pickle"),
     }
 
     two_sided_bool_dict = {
@@ -156,6 +156,8 @@ def main(analysis_name, gwas_summary_file, outputpath, ROOT, run_by_chr=False):
         "B2": False,
     }
 
+#todo
+# add cleaner name for plot
 
     # -----------
     # START LOGGER
@@ -272,25 +274,32 @@ def main(analysis_name, gwas_summary_file, outputpath, ROOT, run_by_chr=False):
         intermediate_dir,
     )
 
+    # calculate genome wide summary of annotations
+    anno_genom_summary_file = calc_genome_distribution_of_annotations(
+        anno_path_dict, anno_summary_dir
+    )
 
     if run_by_chr:
-
-        # calculate genome wide summary of annotations
-        anno_genom_summary_file = calc_genome_distribution_of_annotations(
-            anno_path_dict, anno_summary_dir
+        print("skipping trait-wide enrichments")
+        # make heatmap of one chromosome
+        intersect_ouputs = make_output_plots(
+            intersectAnnoOutputObj, None, anno_path_dict, final_output_dir
         )
+
+    else:
 
         # calculate trait-wide enrichment
         TraitEnrichOutObj = calc_trait_entrichment(
             intersectAnnoOutputObj, anno_genom_summary_file, anno_path_dict, final_output_dir
         )
 
+
         # make final plots
         intersect_ouputs = make_output_plots(
             intersectAnnoOutputObj, TraitEnrichOutObj, anno_path_dict, final_output_dir
         )
-    else:
-        print("skipping trait-wide enrichments")
+
+
 
 
     # organize final outputs

@@ -63,8 +63,7 @@ def load_annotation(anno_file):
 
 
 def summarize_annotation(
-    gwas_df, matched_df, region_summary=get_extreme, trait_summary=np.mean
-):
+    gwas_df, matched_df, region_summary=get_extreme, trait_summary=np.mean):
 
     # remove Na's
     no_na_gwas_mean_df = gwas_df[~gwas_df.anno.isna()].copy()

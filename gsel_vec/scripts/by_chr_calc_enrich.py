@@ -21,52 +21,15 @@ from pathlib import Path
 import shutil
 import time
 
+from statsmodels.stats.multitest import multipletests
 import dask.dataframe as dd
 from datetime import datetime
 DATE = datetime.now().strftime("%Y-%m-%d")
 
-
-# from .helper_dask_calc_enrich import *
-
-## TODO: fix this path
-# sys.path.append("/dors/capra_lab/projects/gwas_allele_age_evolution/mosaic_selection/abin_data/scripts/run_mosaic_round_3_2021_01_27/2021_03_19_bolt-lmm_sstats")
-# from helper_dask_calc_enrich import *
-#
-
-
-### ARGPARSE
-
-if len(sys.argv) ==1:
-
-
-    print("*** ")
-    print("*** RUNNING IN DEBUG MODE ***")
-    print("*** ")
-    ANNO_FILE =Path("/Users/abinabraham/Documents/temp/repro_MENARCHE_AGE.sumstats")
-    ANNO_SUMM_FILE=Path("/Users/abinabraham/Documents/temp/repro_MENARCHE_AGE.sumstats/chr1_repro_MENARCHE_AGE.sumstats/anno_genome_summary/genome_wide_summary_of_annotations.tsv")
-    OUTPUT_DIR=Path("/Users/abinabraham/Documents/temp/repro_MENARCHE_AGE.sumstats")
-    trait_name = 'test_trait'
-
-else:
-    import argparse
-    parser = argparse.ArgumentParser(description="calc anno enrich")
-    parser.add_argument("-g", dest="gsel_output_dir", action="store", type=str, help="full path to gsel_vec outputs for **ONE TRAIT**")
-
-    results = parser.parse_args()
-    ANNO_FILE = Path(results.gsel_output_dir.rstrip('\\'))
-    ANNO_SUMM_FILE = list(Path(results.gsel_output_dir).glob('*/anno_genome_summary/genome_wide_summary_of_annotations.tsv'))[0] # pick one
-    trait_name = Path(results.gsel_output_dir).stem # GSEL_Output directory is the name of trait_name
-    OUTPUT_DIR=Path(results.gsel_output_dir)
+from gsel_vec.scripts.make_output_plots import prep_radar_data, plot_radar
 
 
 
-print("---")
-print(f"DATE: {DATE}")
-print(f"script: {sys.argv[0]}")
-print(f"gsel output dir: {ANNO_FILE}")
-print(f"trait_name: {trait_name}")
-print(f"OUTPUT_DIR: {OUTPUT_DIR}")
-print("---")
 
 # -----------
 # FUNCTIONS
@@ -90,7 +53,7 @@ def dask_load_annotation(trait_name, annotation, anno_files, cache_dir=None):
 
 
 
-    print(f"Dask: Loaded {len(anno_files)} chromosomes in {took(time.time(), dstart )} minutes.")
+    print(f"Dask: Loaded {len(anno_files)} chromosomes in took {(time.time()- dstart )/60:.2f} minutes.")
     return gwas_df, matched_df
 
 def calc_emp_pval(trait_summarized_df, matched_all_regions_df):
@@ -196,130 +159,219 @@ def calc_enrichment(genom_std_per_anno_dict, annotation, descrip_dict):
     return enrich_per_mean_diff_by_genomstd
 
 # %%
+def func_by_chr_calc_enrich(OUTPUT_DIR):
 
-# -----------
-# MAIN
-# -----------
-start = time.time()
-lg = open(OUTPUT_DIR.joinpath(f'{trait_name}_enrich.log'), "w")
-lg.write(f'{DATE}\n')
-lg.write(f'{sys.argv[0]}\n')
-lg.write(f"gsel output dir: {ANNO_FILE}\n")
-lg.write(f"trait name: {trait_name}\n")
-lg.write(f"output dir: {OUTPUT_DIR}\n")
+    OUTPUT_DIR = Path(OUTPUT_DIR)
+    trait_name = OUTPUT_DIR.stem
+    ANNO_FILE = OUTPUT_DIR
+
+    # -----------
+    # MAIN
+    # -----------
+    start = time.time()
+    lg = open(OUTPUT_DIR.joinpath(f'by_chr_enrich.log'), "w")
+    lg.write(f'{DATE}\n')
+    lg.write(f'{sys.argv[0]}\n')
+    lg.write(f"gsel output dir: {ANNO_FILE}\n")
+    lg.write(f"trait name: {trait_name}\n")
+    lg.write(f"output dir: {OUTPUT_DIR}\n")
+
+
+    # -----------
+    # concat z-score and pvalue and re-calculate adjusted p-value
+    # -----------
+    zpval_dir = OUTPUT_DIR.joinpath(f'z_score_pval_combined_across_chr_{trait_name}')
+    if not os.path.exists(zpval_dir):
+      os.makedirs(zpval_dir)
+
+    # load all chromosomes and store each annotation as a different element
+    anno_df_dict = dict()
+    for this_file in list(ANNO_FILE.glob(f"*chr*/final_outputs/pval_zscore_per_anno/*_z_score_pval.tsv")):
+        df = pd.read_csv( this_file, sep="\t")
+        this_anno = df['annotation'].unique()[0]
+        if anno_df_dict.get(this_anno) is not None:
+            anno_df_dict[this_anno].append(df)
+        else:
+            anno_df_dict[this_anno] = [df]
+
+    # combine across chromosomes for each annotation
+    comb_anno_df = {}
+    for key, df_list in anno_df_dict.items():
+
+
+        combined_df = pd.DataFrame()
+        for this_df in df_list:
+            combined_df = combined_df.append(this_df)
+
+        pvalues = combined_df.pvalue
+        hypo_reject_bh, pval_corrected_bh, _, _ = multipletests(pvalues, alpha=0.05, method="fdr_bh")
+        combined_df["reject_h0_benj_hoch"] = hypo_reject_bh
+        combined_df["corrected_pval_benj_hoch"] = pval_corrected_bh
+        combined_df.sort_values("corrected_pval_benj_hoch", inplace=True, ascending=True)
+        combined_df.to_csv(os.path.join(zpval_dir, '{}_z_score_pval_bychr.tsv'.format(key)), sep="\t", index=False)
+        comb_anno_df[key] = combined_df
 
 
 
-# -----------
-# load genome wide std of each evo annotation
-# -----------
-anno_genom_df = pd.read_csv(ANNO_SUMM_FILE, sep="\t")
-genom_std_per_anno_dict = dict(zip(anno_genom_df["annotation"], anno_genom_df["std"]))
+
+    # -----------
+    # load genome wide std of each evo annotation
+    # -----------
+    ANNO_SUMM_FILE = list(OUTPUT_DIR.glob('*/anno_genome_summary/genome_wide_summary_of_annotations.tsv'))[0] # pick one
+    anno_genom_df = pd.read_csv(ANNO_SUMM_FILE, sep="\t")
+    genom_std_per_anno_dict = dict(zip(anno_genom_df["annotation"], anno_genom_df["std"]))
+
+    # %%
+    # -----------
+    # load annotation values
+    # -----------
+
+    # if by_chrm_bool:
+    # glob across (a) chromosomes and (b) selection measures
+    anno_file_list = list(ANNO_FILE.glob(f"*chr*/intermediate_analyses/selection_intersected_matched_sets/*/*_annotation_values.tsv"))
+
+
+    if len(anno_file_list) == 0:
+        lg.write("Exiting. No annotation_values files to parse.")
+        sys.exit("No annotation_values files to parse.")
+
+
+    lg.write(f"number of annotation files: {len(anno_file_list)}\n")
+
+
+    # %%
+    # -----------
+    # calc enrichment per annotation
+    # -----------
+    took = lambda x,y: f"{(x-y)/60:.2f}"
+
+
+
+    ### cache directory to speed up subsequent analsyes
+    cache_dir = OUTPUT_DIR.joinpath(f'cached_{trait_name}')
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    enrich_summary_df = pd.DataFrame()
+    uniq_annos = np.unique([anno_file.parts[-2] for anno_file in anno_file_list])
+    for n_anno, annotation in enumerate(uniq_annos):
+        print(f"Anno {n_anno} out of {len(uniq_annos):,}")
+
+        # select all chromosomes for this annotaiton
+        anno_files = [anno_file for anno_file in anno_file_list if (anno_file.parts[-2] == annotation)]
+
+
+
+        ### log
+        anno_start = time.time()
+        lg.write(f"\nParsing {annotation}. {n_anno} out of {len(uniq_annos):,}.\n")
+
+        if len(anno_files) == 0:
+            err = "No annotation_values files to parse\n"
+            lg.write(err)
+            sys.exit(err)
+        elif len(anno_files) > 22:
+            err = 'more than 22 files per annotation...\n'
+            err = 'more than 22 files per annotation...\n'
+            lg.write(err)
+            sys.exit(err)
+        else:
+            lg.write(f"\tLoaded {len(anno_files)} chromosome annotation files.\n")
+
+
+        ## load this annotation across all chromosomes
+        gwas_df, matched_df = dask_load_annotation(trait_name, annotation, anno_files, cache_dir)
+
+        # preflight check
+        no_na_gwas_mean_df, no_na_matched_df, counts_after_summary_dict = count_before_after_na(matched_df,gwas_df)
+        if (no_na_gwas_mean_df.shape[0] == 0) | (no_na_matched_df.shape[0]==0):
+
+            id_dict = {'trait_name':trait_name,
+                    'annotation':annotation,
+                    "region_summary": 'extreme',
+                    "trait_summary": 'mean'}
+            id_dict.update(counts_after_summary_dict)
+            enrich_summary_df = enrich_summary_df.append(pd.DataFrame.from_records(id_dict, index=[0]))
+
+        else:
+            s = time.time()
+
+            # summarize each locus (collapse over ld snps)
+            summarized_df_dict, counts_after_summary_dict, descrip_dict = vec_sumarize_annotation(gwas_df, matched_df)
+
+            # calc p-value
+            emp_pval = calc_emp_pval(summarized_df_dict['trait_summarized_df'], summarized_df_dict['matched_all_regions_df'])
+
+            # enrichment
+            enrich_per_mean_diff_by_genomstd = calc_enrichment(genom_std_per_anno_dict, annotation, descrip_dict)
+
+            if np.isnan(enrich_per_mean_diff_by_genomstd):
+                emp_pvalue = np.nan
+
+            enrich_results_dict = {'trait_name':trait_name,
+                                  'annotation':annotation,
+                                  'enrich_per_mean_diff_by_genomstd':enrich_per_mean_diff_by_genomstd,
+                                  'emp_pval':emp_pval,
+                                  'regions_summary':'extreme',
+                                  'trait_summary':'mean'}
+
+            enrich_results_dict.update(descrip_dict)
+            enrich_results_dict.update(counts_after_summary_dict)
+
+            # save results
+            enrich_summary_df = enrich_summary_df.append(pd.DataFrame.from_records(enrich_results_dict, index=[0]))
+
+        print(f"Done with annotation. Took {took(time.time(), anno_start)} minutes.")
+
+
+    summary_outfile = OUTPUT_DIR.joinpath(f"{trait_name}_extreme_regions_mean_enrichment_all_annotation.tsv")
+    enrich_summary_df.to_csv(summary_outfile, index=False, sep="\t", float_format='%.5f')
+    print(f"Done with enrichments. Took {took(time.time(), start )} minutes.")
+    lg.write(f"Done with enrichments. Took {took(time.time(), start )} minutes.")
+
+
+    # -----------
+    # plots
+    # -----------
+
+    enrichs, angles, sig_angles, sig_enrichs, annotation_labels, mean_n_lead_loci = prep_radar_data(None, summary_outfile)
+    fig, ax = plot_radar(angles, annotation_labels, enrichs, sig_angles, sig_enrichs, mean_n_lead_loci)
+    fig.savefig(OUTPUT_DIR.joinpath("f{}_{}_radar_plot.pdf".format(DATE, trait_name)))
+
+
+    lg.write(
+        "[status] Done with by_chr_enrich.py. Took {:.2f} minutes.".format(
+            (time.time() - start) / 60
+        )
+    )
+    lg.close()
+
+    status = True
+    return status
+
+
 
 # %%
-# -----------
-# load annotation values
-# -----------
-
-# if by_chrm_bool:
-# glob across (a) chromosomes and (b) selection measures
-anno_file_list = list(ANNO_FILE.glob(f"*chr*/intermediate_analyses/selection_intersected_matched_sets/*/*_annotation_values.tsv"))
+### ARGPARSE
+if __name__ == "__main__":
+    if len(sys.argv) ==1:
 
 
-if len(anno_file_list) == 0:
-    lg.write("Exiting. No annotation_values files to parse.")
-    sys.exit("No annotation_values files to parse.")
+        print("*** ")
+        print("*** RUNNING IN DEBUG MODE ***")
+        print("*** ")
 
-
-lg.write(f"number of annotation files: {len(anno_file_list)}\n")
-
-
-# %%
-# -----------
-# calc enrichment per annotation
-# -----------
-took = lambda x,y: f"{(x-y)/60:.2f}"
-
-
-
-### cache directory to speed up subsequent analsyes
-cache_dir = OUTPUT_DIR.joinpath(f'cached_{trait_name}')
-cache_dir.mkdir(parents=True, exist_ok=True)
-
-enrich_summary_df = pd.DataFrame()
-uniq_annos = np.unique([anno_file.parts[-2] for anno_file in anno_file_list])
-for n_anno, annotation in enumerate(uniq_annos):
-    print(f"Anno {n_anno} out of {len(uniq_annos):,}")
-
-    # select all chromosomes for this annotaiton
-    anno_files = [anno_file for anno_file in anno_file_list if (anno_file.parts[-2] == annotation)]
-
-
-    ### log
-    anno_start = time.time()
-    lg.write(f"\nParsing {annotation}. {n_anno} out of {len(uniq_annos):,}.\n")
-
-    if len(anno_files) == 0:
-        err = "No annotation_values files to parse\n"
-        lg.write(err)
-        sys.exit(err)
-    elif len(anno_files) > 22:
-        err = 'more than 22 files per annotation...\n'
-        err = 'more than 22 files per annotation...\n'
-        lg.write(err)
-        sys.exit(err)
-    else:
-        lg.write(f"\tLoaded {len(anno_files)} chromosome annotation files.\n")
-
-
-    ## load this annotation across all chromosomes
-    gwas_df, matched_df = dask_load_annotation(trait_name, annotation, anno_files, cache_dir)
-
-    # preflight check
-    no_na_gwas_mean_df, no_na_matched_df, counts_after_summary_dict = count_before_after_na(matched_df,gwas_df)
-    if (no_na_gwas_mean_df.shape[0] == 0) | (no_na_matched_df.shape[0]==0):
-
-        id_dict = {'trait_name':trait_name,
-                'annotation':annotation,
-                "region_summary": 'extreme',
-                "trait_summary": 'mean'}
-        id_dict.update(counts_after_summary_dict)
-        enrich_summary_df = enrich_summary_df.append(pd.DataFrame.from_records(id_dict, index=[0]))
+        OUTPUT_DIR=Path("/dors/capra_lab/users/abraha1/projects/gsel_pkg/menarche_data/menarche")
+        func_by_chr_calc_enrich(OUTPUT_DIR)
 
     else:
-        s = time.time()
+        import argparse
+        parser = argparse.ArgumentParser(description="calc anno enrich")
+        parser.add_argument("-g", dest="gsel_output_dir", action="store", type=str, help="full path to gsel_vec outputs for **ONE TRAIT**")
 
-        # summarize each locus (collapse over ld snps)
-        summarized_df_dict, counts_after_summary_dict, descrip_dict = vec_sumarize_annotation(gwas_df, matched_df)
+        results = parser.parse_args()
+        ANNO_FILE = Path(results.gsel_output_dir.rstrip('\\'))
+        ANNO_SUMM_FILE = list(Path(results.gsel_output_dir).glob('*/anno_genome_summary/genome_wide_summary_of_annotations.tsv'))[0] # pick one
+        trait_name = Path(results.gsel_output_dir).stem # GSEL_Output directory is the name of trait_name
+        OUTPUT_DIR=Path(results.gsel_output_dir)
 
-        # calc p-value
-        emp_pval = calc_emp_pval(summarized_df_dict['trait_summarized_df'], summarized_df_dict['matched_all_regions_df'])
 
-        # enrichment
-        enrich_per_mean_diff_by_genomstd = calc_enrichment(genom_std_per_anno_dict, annotation, descrip_dict)
-
-        if np.isnan(enrich_per_mean_diff_by_genomstd):
-            emp_pvalue = np.nan
-
-        enrich_results_dict = {'trait_name':trait_name,
-                              'annotation':annotation,
-                              'enrich_per_mean_diff_by_genomstd':enrich_per_mean_diff_by_genomstd,
-                              'emp_pval':emp_pval,
-                              'regions_summary':'extreme',
-                              'trait_summary':'mean'}
-
-        enrich_results_dict.update(descrip_dict)
-        enrich_results_dict.update(counts_after_summary_dict)
-
-        # save results
-        enrich_summary_df = enrich_summary_df.append(pd.DataFrame.from_records(enrich_results_dict, index=[0]))
-
-    print(f"Done with annotation. Took {took(time.time(), anno_start)} minutes.")
-
-# if not cache_only:
-    # write file with enrichments
-summary_outfile = OUTPUT_DIR.joinpath(f"{trait_name}_extreme_regions_mean_enrichment_all_annotation.tsv")
-enrich_summary_df.to_csv(summary_outfile, index=False, sep="\t", float_format='%.5f')
-print(f"Done with enrichments. Took {took(time.time(), start )} minutes.")
-lg.write(f"Done with enrichments. Took {took(time.time(), start )} minutes.")
-lg.close()

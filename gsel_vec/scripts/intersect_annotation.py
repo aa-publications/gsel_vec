@@ -179,8 +179,7 @@ def get_summary_by_lead_snp(long_df, summary_by):
 
 
 def intersect_annotation(
-    anno_label_path_pair, matched_file, two_sided_bool_dict, summary_type, output_dir
-):
+    anno_label_path_pair, matched_file, two_sided_bool_dict, summary_type, output_dir):
 
     def pickle_df(df, name, output_dir=output_dir):
         pickle_path=os.path.join(output_dir, name)
@@ -508,7 +507,12 @@ def intersect_all_annotations(
 
     # create a temp directory
     temp_output_dir = os.path.join(output_dir, 'temp_dir')
-    os.mkdir(temp_output_dir)
+    if not os.path.exists(temp_output_dir):
+      os.makedirs(temp_output_dir)
+
+
+
+
 
     ###
     ### one thread per annotation intersectiong

@@ -24,6 +24,9 @@ DATE = datetime.now().strftime('%Y-%m-%d')
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 
 
 # %%
@@ -211,10 +214,16 @@ def plot_zscore_heatmap(intersectAnnoOutputObj, anno_path_dict):
 
 
 
-def prep_radar_data(TraitEnrichOutObj):
+def prep_radar_data(TraitEnrichOutObj, summary_enrich_file=False):
 
-    summary_enrich_file = TraitEnrichOutObj.get('trait_enrichment')
-    summary_df = pd.read_csv(summary_enrich_file, sep="\t")
+    if summary_enrich_file:
+        summary_df = pd.read_csv(summary_enrich_file, sep="\t")
+        summary_df.rename(columns={'n_lead_loci_final':'n_lead_loci', 'emp_pval':'emp_pvalue'}, inplace=True)
+    else:
+        summary_enrich_file = TraitEnrichOutObj.get('trait_enrichment')
+        summary_df = pd.read_csv(summary_enrich_file, sep="\t")
+
+
     plt_df = summary_df.copy()
     enrichs = summary_df['enrich_per_mean_diff_by_genomstd'].values.tolist()
     enrichs += enrichs[:1]
@@ -235,40 +244,25 @@ def prep_radar_data(TraitEnrichOutObj):
     sig_enrichs = [enrichs[i]  for i,x in enumerate(pvals) if x]
 
     annotation_labels = summary_df.annotation.unique().tolist()
+    anno_label_dict={'argweave': 'ARGweaver\n(TMRCA)',
+                     'geva_allele_age': 'GEVA\n(allele age)',
+                    'betascore': 'Beta Score',
+                    'B2': 'Beta Score 2',
+                    'linsigh': 'LINSIGHT',
+                    'phastCon100': 'PhastCons',
+                    'phyloP100': 'PhyloP',
+                    'gerp': 'GERP',
+                    'fst_eas_afr': 'Fst\neas-afr',
+                    'fst_eur_afr': 'Fst\neur-afr',
+                    'fst_eur_eas': 'Fst\neur-eas',
+                    'iES_Sabeti': 'iES(Sabeti)',
+                    'xpehh_afr2_eas': 'XP-EHH\nafr-eas',
+                    'xpehh_afr2_eur': 'XP-EHH\nafr-eur',
+                    'xpehh_eas_eur': 'XP-EHH\neas-eur'}
+
+    annotation_labels = [anno_label_dict[x] for x in annotation_labels]
 
     return enrichs, angles, sig_angles, sig_enrichs, annotation_labels, mean_n_lead_loci
-
-def dev_prep_radar_data():
-
-    # summary_enrich_file = TraitEnrichOutObj.get('trait_enrichment')
-    # summary_enrich_file="/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/demov1/trait_enrichments/trait_enrichment.tsv"
-    summary_enrich_file="/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/bmi40k/intermediate_analyses/trait_enrichments/trait_enrichment.tsv"
-    summary_df = pd.read_csv(summary_enrich_file, sep="\t")
-    plt_df = summary_df.copy()
-    enrichs = summary_df['enrich_per_mean_diff_by_genomstd'].values.tolist()
-    enrichs += enrichs[:1]
-
-    mean_n_lead_loci = np.round(summary_df['n_lead_loci'].mean())
-
-
-    pvals = []
-    for ind, row in plt_df.iterrows():
-        this_pvalue = row.emp_pvalue < 0.05
-        pvals.append(this_pvalue)
-
-    pvals += pvals[:1]
-
-    n_cat = summary_df.annotation.nunique()
-    angles = [n / float(n_cat) * 2 * pi for n in range(n_cat)]
-    angles += angles[:1]
-
-    sig_angles = [angles[i]  for i,x in enumerate(pvals) if x]
-    sig_enrichs = [enrichs[i]  for i,x in enumerate(pvals) if x]
-
-    annotation_labels = summary_df.annotation.unique().tolist()
-
-    return enrichs, angles, sig_angles, sig_enrichs, annotation_labels, mean_n_lead_loci
-
 
 def plot_radar( angles, annotation_labels, enrichs, sig_angles, sig_enrichs, mean_n_lead_loci):
 
@@ -277,7 +271,7 @@ def plot_radar( angles, annotation_labels, enrichs, sig_angles, sig_enrichs, mea
     # enrichs, angles, sig_angles, sig_enrichs, annotation_labels, mean_n_lead_loci = dev_prep_radar_data()
     fig, ax = plt.subplots(subplot_kw=dict(polar=True), figsize=(10,10))
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(annotation_labels, color='black', size=12,rotation=300)
+    ax.set_xticklabels(annotation_labels, color='dimgray', size=16,rotation=300)
 
 
     # set number of co-centric circles
@@ -288,12 +282,12 @@ def plot_radar( angles, annotation_labels, enrichs, sig_angles, sig_enrichs, mea
 
     ax.set_ylim(-max_, max_)
     ax.set_yticks(np.linspace(-max_, max_, 5))
-    ax.set_yticklabels(["{:.2f}".format(x) for x in np.linspace(-max_, max_, 5)], ha='center')
+    ax.set_yticklabels(["{:.2f}".format(x) for x in np.linspace(-max_, max_, 5)], ha='center',color='dimgray', size=16)
     ax.set_rlabel_position(90,)
 
 
-    ax.plot(angles, enrichs, linewidth=0, linestyle='solid', marker='o', markerfacecolor='gray', color='k', markersize=8)
-    ax.plot(sig_angles, sig_enrichs, linewidth=0, linestyle='solid', marker='o',markerfacecolor='indianred',color='k', markersize=8, label='p<0.05')
+    ax.plot(angles, enrichs, linewidth=0, linestyle='solid', marker='o', markerfacecolor='gray', color='k', markersize=12)
+    ax.plot(sig_angles, sig_enrichs, linewidth=0, linestyle='solid', marker='o',markerfacecolor='indianred',color='k', markersize=12, label='p<0.05')
 
     gridlines = ax.yaxis.get_gridlines()
     # gridlines[ind].set_linewidth(2.5)
@@ -301,7 +295,7 @@ def plot_radar( angles, annotation_labels, enrichs, sig_angles, sig_enrichs, mea
     ax.spines['polar'].set_visible(False)
 
 
-    ax.legend( fontsize=8, loc='upper right')
+    ax.legend( fontsize=16, loc='upper right')
     ax.fill(angles, enrichs, 'skyblue', alpha=0.3)
     ax.fill_between(np.linspace(0, 2*np.pi, 100), -0.001, 0.001, color='goldenrod', zorder=10) # <-- Added here
     [x.set_color('goldenrod') if x.get_position() == (0,0) else '' for x in ax.get_yticklabels()]
@@ -324,26 +318,26 @@ def make_output_plots(intersectAnnoOutputObj, TraitEnrichOutObj, anno_path_dict,
     OutObj = Outputs(output_dir, overwrite=True)
     OutObj = set_up_outputs(OutObj)
 
-    # make heatmap
-    cg = plot_zscore_heatmap(intersectAnnoOutputObj, anno_path_dict)
-    cg.savefig(OutObj.get('zscore_heatmap'))
-    logger.debug("[status] Heatmap of trait-associated loci saved.")
-    plt.clf()
+    if intersectAnnoOutputObj:
+        # make heatmap
+        cg = plot_zscore_heatmap(intersectAnnoOutputObj, anno_path_dict)
+        cg.savefig(OutObj.get('zscore_heatmap'))
+        logger.debug("[status] Heatmap of trait-associated loci saved.")
+        plt.clf()
 
-    # make mean annotation value plot
-    fig, axs = plot_mean_annotation_values(intersectAnnoOutputObj, anno_path_dict)
-    # fig, axs = plot_mean_annotation_values()
-    # fig.savefig('test3.pdf')
-    plt.tight_layout()
-    fig.savefig(OutObj.get('mean_anno_scatter'))
-    logger.debug("[status] Mean annotation value scatter plot saved.")
-    plt.clf()
+        # make mean annotation value plot
+        # fig, axs = plot_mean_annotation_values(intersectAnnoOutputObj, anno_path_dict)
+        # plt.tight_layout()
+        # fig.savefig(OutObj.get('mean_anno_scatter'))
+        # logger.debug("[status] Mean annotation value scatter plot saved.")
+        # plt.clf()
 
     # make radar plot
-    enrichs, angles, sig_angles, sig_enrichs, annotation_labels, mean_n_lead_loci = prep_radar_data(TraitEnrichOutObj)
-    fig, ax = plot_radar(angles, annotation_labels, enrichs, sig_angles, sig_enrichs, mean_n_lead_loci)
-    fig.savefig(OutObj.get('trait_enrich_radar'))
-    logger.debug("[status] Radar plot saved.")
+    if TraitEnrichOutObj:
+        enrichs, angles, sig_angles, sig_enrichs, annotation_labels, mean_n_lead_loci = prep_radar_data(TraitEnrichOutObj)
+        fig, ax = plot_radar(angles, annotation_labels, enrichs, sig_angles, sig_enrichs, mean_n_lead_loci)
+        fig.savefig(OutObj.get('trait_enrich_radar'))
+        logger.debug("[status] Radar plot saved.")
 
 
 # %%
