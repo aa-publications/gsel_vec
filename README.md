@@ -8,7 +8,7 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 ## Install
 **Please install these dependecies.**
 <br>1. [PLINK 1.90 beta](https://www.cog-genomics.org/plink2)<br>2. [Anaconda](https://www.anaconda.com/products/individual) <br>
-
+- _note: the shell should have path access to run the plink command_ 
 
 **Run the** `commands` **as shown.** <br>
 1) clone git repository: `git clone https://github.com/abraham-abin13/gsel_vec.git` <br>
@@ -22,7 +22,7 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 
 
 **Demo after installation** <br>
-1) activate conda env `source activate manual_` <br>
+1) activate conda env `source activate evo_dask` <br>
 2) run pipeline with demo data. `top_gsel_vec.py`
 
 
