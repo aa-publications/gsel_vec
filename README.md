@@ -87,11 +87,12 @@ For GWAS with a large number of trait-associated regions, this pipeline can be r
 
 A. Instructions
 1. split summary statistics into files for each chromosome
-2. per chromosome files should be named chr<#>_<analysis_name>
+2. per chromosome summary stats files should be named chr<#>_<analysis_name>
 3. create a folder for output_path named <analysis_name>
-4. run `top_gsel_vec.py <analysis_name> <full_path_to_per_chromosome_file> <output_path> --run_by_chr` for each chromosome
-    * note the file naming convention
+4. run `top_gsel_vec.py -a <analysis_name> -g <path_to_per_chromosome_summary_stats_file> -o <output_path> --run_by_chr` for each chromosome
     * note the `--run_by_chr` flag is added
     * note the <output_path> should be the full path to the folder named <analysis_name> created in step 3.
-5. run `python gsel_vec/gsel_vec/scripts/by_chr_calc_enrich.py -g <output_path>`.
-6. Trait-wide enrichment will saved to `<analysis_name>_extreme_regions_mean_enrichment_all_annotation.tsv`
+    * repeat this command with each chromosome file (changing the -g flag input) 
+5. run `top_gsel_vec.py -a <analysis_name> -o <output_path> --run_by_chr_enrich`.
+    * This will calculate trait wide enrichments.  
+7. Trait-wide enrichment will saved to `<analysis_name>_extreme_regions_mean_enrichment_all_annotation.tsv`
