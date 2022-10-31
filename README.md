@@ -21,9 +21,11 @@ This pipeline detects enrichment and depletion of evolutionary signatures from G
 5) install package: `pip install .` <br>
 
 
-**Demo after installation** <br>
+## Test Suite After Installation <br>
 1) activate conda env `source activate evo_dask` <br>
-2) run pipeline with demo data. `top_gsel_vec.py`
+2) run the command `top_gsel_vec.py`
+3) outputs are saved to a folder called 'testing' in the current directory. 
+4) See Outputs section and Details sections below for interpreting output files. 
 
 
 ## Run
