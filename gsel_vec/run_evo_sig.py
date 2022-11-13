@@ -161,7 +161,7 @@ def main(analysis_name, gwas_summary_file, outputpath, ROOT, run_by_chr=False):
         # "xpehh_eas_eur": False,
         # "geva_allele_age": True,
         # "B2": False,
-    }
+    # }
 
 #todo
 # add cleaner name for plot
