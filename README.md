@@ -110,10 +110,11 @@ A. Instructions
 2. Convert annotation value file to a python pickled dictionary 
 - Run the script below to convert annotation value file to a python pickled dictionary. It takes one input argument which is the full path to the file from step 1. This script will write to the current directory a pickled dictionary named: “<full_path_to_annotation_tsv_file>.pickle” Run the command as shown below: 
 
-`python ./gsel_vec/gsel_vec/create_annotations/make_anno_dict.py <full_path_to_annotation_tsv_file>`
- 
+`python ./gsel_vec/gsel_vec/create_annotations/make_anno_dict.py <full_path_to_annotation_tsv_file>` 
+
+
 3. Move pickled file to ‘anno_dict” folder 
-- Move the pickled to the following location ./gsel_vec/gsel_vec/data/anno_dict. Here is an example command: 
+- Move the pickled to the following location ./gsel_vec/gsel_vec/data/anno_dict. Here is an example command:  <br>
  
 `mv <pickled_file_full_path> ./gsel_vec/gsel_vec/data/anno_dict` 
  
@@ -128,6 +129,8 @@ A. Instructions
 5. Reinstall GSEL. 
 - uninstall GSEL if you already have it installed. Run `pip uninstall gsel_vec`
 - make sure you are in the ./gsel_vec directory. Then run `pip install .` 
+
+6. GSEL can be run using the instruction given above and it will now include the new evolutionary measure. 
  
 
 
