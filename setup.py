@@ -14,7 +14,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[],
     include_package_data=True,
-    package_data={'gsel_vec': ['demo/input_data/*', 'data/1kg/*', 'data/anno_dict/*', 'data/snpsnap_database/*']},
+    package_data={'gsel_vec': ['demo/input_data/*', 'data/anno_dict/anno_description.txt', 'data/1kg/*', 'data/anno_dict/*', 'data/snpsnap_database/*']},
     python_requires=">=3.6",
     classifiers=[
         "Programming Language :: Python",

@@ -260,7 +260,8 @@ def prep_radar_data(TraitEnrichOutObj, summary_enrich_file=False):
                     'xpehh_afr2_eur': 'XP-EHH\nafr-eur',
                     'xpehh_eas_eur': 'XP-EHH\neas-eur'}
 
-    annotation_labels = [anno_label_dict[x] for x in annotation_labels]
+    # annotation_labels = [anno_label_dict[x] for x in annotation_labels]
+    annotation_labels = [anno_label_dict.get(x, x) for x in annotation_labels]
 
     return enrichs, angles, sig_angles, sig_enrichs, annotation_labels, mean_n_lead_loci
 

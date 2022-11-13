@@ -96,64 +96,71 @@ def main(analysis_name, gwas_summary_file, outputpath, ROOT, run_by_chr=False):
     snpsnap_db_file = os.path.join(data_path, "snpsnap_database/snpsnap_database_ld0.9.tab.gz")
     thous_gen_file = os.path.join(data_path, "1kg/EUR.chr{}.phase3.nodups")
     anno_dir = os.path.join(data_path, "anno_dict")
+    anno_descrip_file = os.path.join(data_path, "anno_dict/anno_description.txt")
 
-    anno_path_dict = {
-        "argweave": os.path.join(anno_dir, "argweave_snpsnap_eur_ld0.1_collection.pickle"),
-        "betascore": os.path.join(
-            anno_dir, "betascore_snpsnap_eur_ld0.1_collection.pickle"
-        ),
-        "fst_eas_afr": os.path.join(
-            anno_dir, "fst_eas_afr_snpsnap_eur_ld0.1_collection.pickle"
-        ),
-        "fst_eur_afr": os.path.join(
-            anno_dir, "fst_eur_afr_snpsnap_eur_ld0.1_collection.pickle"
-        ),
-        "fst_eur_eas": os.path.join(
-            anno_dir, "fst_eur_eas_snpsnap_eur_ld0.1_collection.pickle"
-        ),
-        "gerp": os.path.join(anno_dir, "gerp_snpsnap_eur_ld0.1_collection.pickle"),
-        "iES_Sabeti": os.path.join(
-            anno_dir, "iES_Sabeti_snpsnap_eur_ld0.1_collection.pickle"
-        ),
-        "linsigh": os.path.join(anno_dir, "linsigh_snpsnap_eur_ld0.1_collection.pickle"),
-        "phastCon100": os.path.join(
-            anno_dir, "phastCon100_snpsnap_eur_ld0.1_collection.pickle"
-        ),
-        "phyloP100": os.path.join(
-            anno_dir, "phyloP100_snpsnap_eur_ld0.1_collection.pickle"
-        ),
-        "xpehh_afr2_eas": os.path.join(
-            anno_dir, "xpehh_afr2_eas_snpsnap_eur_ld0.1_collection.pickle"
-        ),
-        "xpehh_afr2_eur": os.path.join(
-            anno_dir, "xpehh_afr2_eur_snpsnap_eur_ld0.1_collection.pickle"
-        ),
-        "xpehh_eas_eur": os.path.join(
-            anno_dir, "xpehh_eas_eur_snpsnap_eur_ld0.1_collection.pickle"
-        ),
-        "geva_allele_age": os.path.join(
-            anno_dir, "geva_allele_age_snpsnap_eur_ld0.1_collection.pickle"
-        ),
+    descrip_df = pd.read_csv(anno_descrip_file, sep=",", names=['anno','filename','two_sided_bool'])
+    descrip_df['path'] = descrip_df['filename'].apply(lambda x: os.path.join(anno_dir, x))
+    anno_path_dict  = dict(zip(descrip_df['anno'], descrip_df['path']))
+    two_sided_bool_dict = dict(zip(descrip_df['anno'], descrip_df['two_sided_bool']))
+
+
+    # anno_path_dict = {
+        # "argweave": os.path.join(anno_dir, "argweave_snpsnap_eur_ld0.1_collection.pickle"),
+        # "betascore": os.path.join(
+        #     anno_dir, "betascore_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
+        # "fst_eas_afr": os.path.join(
+        #     anno_dir, "fst_eas_afr_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
+        # "fst_eur_afr": os.path.join(
+        #     anno_dir, "fst_eur_afr_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
+        # "fst_eur_eas": os.path.join(
+        #     anno_dir, "fst_eur_eas_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
+        # "gerp": os.path.join(anno_dir, "gerp_snpsnap_eur_ld0.1_collection.pickle"),
+        # "iES_Sabeti": os.path.join(
+        #     anno_dir, "iES_Sabeti_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
+        # "linsigh": os.path.join(anno_dir, "linsigh_snpsnap_eur_ld0.1_collection.pickle"),
+        # "phastCon100": os.path.join(
+        #     anno_dir, "phastCon100_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
+        # "phyloP100": os.path.join(
+        #     anno_dir, "phyloP100_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
+        # "xpehh_afr2_eas": os.path.join(
+        #     anno_dir, "xpehh_afr2_eas_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
+        # "xpehh_afr2_eur": os.path.join(
+        #     anno_dir, "xpehh_afr2_eur_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
+        # "xpehh_eas_eur": os.path.join(
+        #     anno_dir, "xpehh_eas_eur_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
+        # "geva_allele_age": os.path.join(
+            # anno_dir, "geva_allele_age_snpsnap_eur_ld0.1_collection.pickle"
+        # ),
         # "B2": os.path.join(anno_dir, "B2_snpsnap_eur_ld0.1_collection.pickle"),
-    }
-
-    two_sided_bool_dict = {
-        "argweave": True,
-        "betascore": False,
-        "fst_eas_afr": False,
-        "fst_eur_afr": False,
-        "fst_eur_eas": False,
-        "gerp": False,
-        "iES_Sabeti": False,
-        "linsigh": False,
-        "phastCon100": False,
-        "phyloP100": True,
-        "xpehh_afr2_eas": False,
-        "xpehh_afr2_eur": False,
-        "xpehh_eas_eur": False,
-        "xpehh_eas_eur": False,
-        "geva_allele_age": True,
-        "B2": False,
+    # }
+    #
+    # two_sided_bool_dict = {
+    #     "argweave": True,
+        # "betascore": False,
+        # "fst_eas_afr": False,
+        # "fst_eur_afr": False,
+        # "fst_eur_eas": False,
+        # "gerp": False,
+        # "iES_Sabeti": False,
+        # "linsigh": False,
+        # "phastCon100": False,
+        # "phyloP100": True,
+        # "xpehh_afr2_eas": False,
+        # "xpehh_afr2_eur": False,
+        # "xpehh_eas_eur": False,
+        # "xpehh_eas_eur": False,
+        # "geva_allele_age": True,
+        # "B2": False,
     }
 
 #todo
