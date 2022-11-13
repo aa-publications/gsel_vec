@@ -98,3 +98,39 @@ A. Instructions
 5. run `top_gsel_vec.py -a <analysis_name> -o <output_path> --run_by_chr_enrich`.
     * This will calculate trait wide enrichments.  
 7. Trait-wide enrichment will saved to `<analysis_name>_extreme_regions_mean_enrichment_all_annotation.tsv`
+
+
+### Adding a new evolutionary measure to GSEL 
+1. Create a tab separated file with annotation values 
+- To add an evolutionary measure, create a tab separated file with two columns. 
+- Columns names have to be: “chr_pos” and “value”. 
+- "chr_pos" column is the  position of SNPs formatted as “<chromosome#>:<basepair_position>” Note: The coordinates should be in GRChg37. 
+- "value" column should be the value of your evolutionary measure for each SNP
+
+2. Convert annotation value file to a python pickled dictionary 
+- Run the script below to convert annotation value file to a python pickled dictionary. It takes one input argument which is the full path to the file from step 1. This script will write to the current directory a pickled dictionary named: “<full_path_to_annotation_tsv_file>.pickle” Run the command as shown below: 
+
+`python ./gsel_vec/gsel_vec/create_annotations/make_anno_dict.py <full_path_to_annotation_tsv_file>` 
+
+
+3. Move pickled file to ‘anno_dict” folder 
+- Move the pickled to the following location ./gsel_vec/gsel_vec/data/anno_dict. Here is an example command:  <br>
+ 
+`mv <pickled_file_full_path> ./gsel_vec/gsel_vec/data/anno_dict` 
+ 
+4. Modify the file anno_description.txt to include new evolutionary measure 
+- Open the file anno_description.txt located at “gsel_vec/gsel_vec/data/anno_dict/anno_description.txt”. 
+- Add a line at the bottom with three values separated by commas. 
+- The first value is the name of the evolutionary measure, the second value is the name of the pickled file, the third column can only be True or False. 
+   - This third column specifies whether two-sided P-value or one-sided P-values should be calculated. See example of a line that should be added: 
+ 
+`evo_measure_name,evo_measure_values.pickle,True` 
+ 
+5. Reinstall GSEL. 
+- uninstall GSEL if you already have it installed. Run `pip uninstall gsel_vec`
+- make sure you are in the ./gsel_vec directory. Then run `pip install .` 
+
+6. GSEL can be run using the instruction given above and it will now include the new evolutionary measure. 
+ 
+
+
