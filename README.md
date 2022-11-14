@@ -134,3 +134,22 @@ A. Instructions
  
 
 
+### Running GSEL on non-European populations   
+To run GSEL on non European population requires two modifications. (1) The 1000 Genomes SNP data used for LD clumping and (2) the SNPSnap database should be changed to the population of interest. 
+
+
+(1)  1000 Genomes Phase 3   
+1. In PLINK (*.bim, *.bed, *.fam) format, you can download 1000 Genomes Phase 3 for the population of interest at this link: https://www.internationalgenome.org/data/. 
+2. Make sure each file is named using this format: “chr<#>.bed”,“chr<#>.bim” or “chr<#>.fam” 
+3. Move all files for chromosomes 1-22 to this location. `gsel_vec/gsel_vec/data/1kg`
+
+(2) SNPSnap provides a dataset used for matching in the GSEL pipeline. Currently, datasets for the European, East Asian, and West African super populations can be downloaded from `https://data.broadinstitute.org/mpg/snpsnap/database_download.html`. If you require a different population, then you must create the SNSnap dataset yourself. See SNSnap website for details. 
+
+1. Download snpsnap dataset using distance type of “LD” and distance cut-off of r2=0.9 and your population of interest. 
+2. Ensure that the downloaded file is named “snpsnap_database_ld0.9.tab.gz”. 
+3. Move this file to `gsel_vec/gsel_vec/data/snpsnap_database`   
+
+
+3. Run GSEL using instructions given above. 
+
+
