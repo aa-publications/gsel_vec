@@ -5,7 +5,7 @@
 
 ANNO_DICT="https://ndownloader.figshare.com/articles/13664564/versions/1"
 SNPSNAP="https://ndownloader.figshare.com/files/26226920"
-KG_DICT="https://ndownloader.figshare.com/articles/13664570/versions/1"
+KG_DICT="https://ndownloader.figshare.com/articles/21552732/versions/1"
 
 # OUTPUT_DIR="/dors/capra_lab/projects/gwas_allele_age_evolution/scripts/pipeline/dev/gsel_vec/gsel_vec/data"
 OUTPUT_DIR=${PWD}"/gsel_vec/data"
