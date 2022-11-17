@@ -39,7 +39,7 @@ The main command is `top_gsel_vec.py <analysis_name>   <gwas_summary_file>   <ou
 Outputs are saved to **output_path** in a folder with the name **analysis_name**. The final outputs of the analyses are stored in the folder **final_outputs** with the following folders:
 - **trait_enrichments/trait_enrichment.tsv**:  enrichment for each evolutionary measure at the trait level
 -**pval_zscore_per_anno/*.tsv**: Z-score and empirical p-value for each trait associated locus compared to matched background; one file per evolutionary measure
-- **plot_outputs/**: [to do]
+- **plot_outputs/**: 
 
 
 
